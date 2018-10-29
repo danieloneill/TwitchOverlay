@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>qml/main.qml</file>
+        <file>qml/Chatter.qml</file>
+        <file>qml/twitch.js</file>
+        <file>qml/ToonLabel.qml</file>
+        <file>lewl.png</file>
+        <file>qml/configure.qml</file>
+        <file>qml/Handle.qml</file>
+        <file>qml/Repositioner.qml</file>
+    </qresource>
+</RCC>
