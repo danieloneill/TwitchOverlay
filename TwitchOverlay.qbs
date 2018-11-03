@@ -10,9 +10,8 @@ Project {
         Depends { name: 'Qt.widgets' }
         Depends { name: 'Qt.quickwidgets' }
 
-
         // Additional import path used to resolve QML modules in Qt Creator's code model
-        property pathList qmlImportPaths: []
+        property pathList qmlImportPaths: [ 'qml' ]
 
         cpp.cxxLanguageVersion: "c++11"
 

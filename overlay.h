@@ -24,8 +24,8 @@ class Overlay : public QWidget
     Q_PROPERTY(qreal overlayh READ overlayH WRITE setOverlayH NOTIFY overlayHChanged)
     Q_PROPERTY(QString username READ username WRITE setUsername NOTIFY usernameChanged)
     Q_PROPERTY(QString authkey READ authkey WRITE setAuthkey NOTIFY authkeyChanged)
-    Q_PROPERTY(QString clientid READ clientid WRITE setClientid NOTIFY clientidChanged)
-    Q_PROPERTY(QString secret READ secret WRITE setSecret NOTIFY secretChanged)
+    Q_PROPERTY(QString refreshtoken READ refreshtoken WRITE setRefreshtoken NOTIFY refreshtokenChanged)
+    Q_PROPERTY(QString expires READ expires WRITE setExpires NOTIFY expiresChanged)
     Q_PROPERTY(QString channel READ channel WRITE setChannel NOTIFY channelChanged)
 
 public:
@@ -40,13 +40,14 @@ signals:
 
     void usernameChanged();
     void authkeyChanged();
-    void clientidChanged();
-    void secretChanged();
+    void refreshtokenChanged();
+    void expiresChanged();
     void channelChanged();
 
     void reconnect();
     void disconnect();
     void repositioning();
+    void _showMessage(const QString &message);
 
 public slots:
     void fillScreen();
@@ -56,6 +57,9 @@ public slots:
 
     void toggle();
 
+    void reload();
+    void showMessage(const QString &message);
+
     // property getters:
     qreal overlayX();
     qreal overlayY();
@@ -64,8 +68,8 @@ public slots:
 
     QString username();
     QString authkey();
-    QString clientid();
-    QString secret();
+    QString refreshtoken();
+    QString expires();
     QString channel();
 
     // property setters:
@@ -76,8 +80,8 @@ public slots:
 
     void setUsername(const QString &v);
     void setAuthkey(const QString &v);
-    void setClientid(const QString &v);
-    void setSecret(const QString &v);
+    void setRefreshtoken(const QString &v);
+    void setExpires(const QString &v);
     void setChannel(const QString &v);
 
 protected:

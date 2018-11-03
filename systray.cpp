@@ -11,7 +11,7 @@ Systray::Systray(QObject *parent) : QObject(parent)
     QAction *a_reposition = m_menu->addAction(tr("&Reposition..."));
     QAction *a_configure = m_menu->addAction(tr("&Configuration..."));
     m_menu->addSeparator();
-    QAction *a_exit = m_menu->addAction(tr("&E&xit"));
+    QAction *a_exit = m_menu->addAction(tr("E&xit"));
 
     QObject::connect( a_configure, SIGNAL(triggered()), this, SIGNAL(openConfig()) );
     QObject::connect( a_reposition, SIGNAL(triggered()), this, SIGNAL(openReposition()) );
@@ -28,6 +28,11 @@ Systray::Systray(QObject *parent) : QObject(parent)
 Systray::~Systray()
 {
     m_menu->deleteLater();
+}
+
+void Systray::showMessage(const QString &message)
+{
+    m_systray.showMessage("TwitchOverlay", message);
 }
 
 void Systray::exit()

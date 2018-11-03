@@ -18,20 +18,14 @@ Item {
             rowSpacing: 5
             columnSpacing: 5
 
-            Label { text: qsTr('Username:'); }
-            TextField { id: fieldUsername; text: Overlay.username; Layout.fillWidth: true }
+            Button { id: fieldLink; text: 'Link Twitch'; Layout.fillWidth: true; Layout.columnSpan: 2; onClicked: { twitchLogin.spawn(); } }
 
-            Label { text: qsTr('Authkey:'); }
-            TextField { id: fieldAuthkey; text: Overlay.authkey; Layout.fillWidth: true }
-/*
-            Label { text: qsTr('Client ID:'); }
-            TextField { id: fieldClientid; text: Overlay.clientid; Layout.fillWidth: true }
-
-            Label { text: qsTr('Client Secret:'); }
-            TextField { id: fieldSecret; text: Overlay.secret; Layout.fillWidth: true }
-*/
             Label { text: qsTr('Channel:'); }
             TextField { id: fieldChannel; text: Overlay.channel; Layout.fillWidth: true }
+        }
+
+        TwitchLogin {
+            id: twitchLogin
         }
 
         Row {
@@ -52,12 +46,6 @@ Item {
                 text: qsTr('&Okay')
                 onClicked: {
                     Overlay.disconnect();
-                    Overlay.username = fieldUsername.text;
-                    Overlay.authkey = fieldAuthkey.text;
-                    /*
-                    Overlay.clientid = fieldClientid.text;
-                    Overlay.secret = fieldSecret.text;
-                    */
                     Overlay.channel = fieldChannel.text;
                     Overlay.reconnect();
 

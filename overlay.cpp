@@ -120,15 +120,25 @@ void Overlay::toggle()
     setVisible( !isVisible() );
 }
 
+void Overlay::reload()
+{
+    emit reconnect();
+}
+
+void Overlay::showMessage(const QString &message)
+{
+    emit _showMessage(message);
+}
+
 // property getters:
 qreal Overlay::overlayX()
 {
-    return m_settings->value("x", 0).toReal();
+    return m_settings->value("x", 60).toReal();
 }
 
 qreal Overlay::overlayY()
 {
-    return m_settings->value("y", 0).toReal();
+    return m_settings->value("y", 60).toReal();
 }
 
 qreal Overlay::overlayW()
@@ -151,14 +161,14 @@ QString Overlay::authkey()
     return m_settings->value("authkey").toString();
 }
 
-QString Overlay::clientid()
+QString Overlay::refreshtoken()
 {
-    return m_settings->value("clientid").toString();
+    return m_settings->value("refreshtoken").toString();
 }
 
-QString Overlay::secret()
+QString Overlay::expires()
 {
-    return m_settings->value("secret").toString();
+    return m_settings->value("expires").toString();
 }
 
 QString Overlay::channel()
@@ -221,22 +231,22 @@ void Overlay::setAuthkey(const QString &v)
     emit authkeyChanged();
 }
 
-void Overlay::setClientid(const QString &v)
+void Overlay::setRefreshtoken(const QString &v)
 {
-    if( v == clientid() )
+    if( v == refreshtoken() )
         return;
 
-    m_settings->setValue("clientid", v);
-    emit clientidChanged();
+    m_settings->setValue("refreshtoken", v);
+    emit refreshtokenChanged();
 }
 
-void Overlay::setSecret(const QString &v)
+void Overlay::setExpires(const QString &v)
 {
-    if( v == secret() )
+    if( v == expires() )
         return;
 
-    m_settings->setValue("secret", v);
-    emit secretChanged();
+    m_settings->setValue("expires", v);
+    emit expiresChanged();
 }
 
 void Overlay::setChannel(const QString &v)

@@ -25,6 +25,7 @@ signals:
     void toggle();
 
 public slots:
+    void showMessage(const QString &message);
     void exit();
 };
 

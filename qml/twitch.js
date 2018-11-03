@@ -5,8 +5,7 @@ var api = {
 
     // FIXME: This is to prevent duplicate messages.
 //    m_hack_lastLine: '',
-
-    m_credentials: {},
+    m_tryingToLogin: false,
 
     m_chatSocket: false,
     m_reconnectTimer: false,
@@ -30,17 +29,38 @@ var api = {
         this.m_avatarHooks.push(callback);
     },
 
+    getUsername: function()
+    {
+        console.log("Updating username...");
+        var url = 'https://id.twitch.tv/oauth2/validate';
+        var headers = [ ['Authorization', 'OAuth '+Overlay.authkey ] ];
+
+        this.httpRequester(url, function(pkt) {
+            var json = JSON.parse(pkt);
+            Overlay.setUsername(json['login']);
+            Overlay.setChannel(json['login']);
+
+            Overlay.reload();
+        }, headers);
+    },
+
     create: function(chatModel)
     {
         var self = this;
         this.m_chatModel = chatModel;
-        this.m_chatSocket = Qt.createQmlObject('import org.jemc.qml.Sockets 1.0; TCPSocket { id: socket }', chatModel, 'm_chatSocket');
-        this.m_chatSocket.connected.connect( function() { self.socketConnected(); } );
-        this.m_chatSocket.read.connect( function(message) { self.socketRead(message); } );
-        this.m_chatSocket.disconnected.connect( function() { self.socketDisconnected(); } );
 
-        this.m_chatSocket.host = 'irc.chat.twitch.tv';
-        this.m_chatSocket.port = 6667;
+        this.m_chatSocket = Qt.createQmlObject('import QtWebSockets 1.1; WebSocket { id: socket }', chatModel, 'm_chatSocket');
+        this.m_chatSocket.statusChanged.connect( function(status) {
+            console.log("WebSocket status: "+status);
+            if( status == 1 )
+                self.socketConnected();
+            else if( status == 3 )
+                self.socketDisconnected();
+        });
+        this.m_chatSocket.textMessageReceived.connect( function(msg) {
+            self.socketRead(msg);
+        });
+        this.m_chatSocket.url = 'ws://irc-ws.chat.twitch.tv:80';
 
         this.m_reconnectTimer = Qt.createQmlObject('import QtQuick 2.0; Timer { id: timer }', chatModel, 'm_reconnectTimer');
         this.m_reconnectTimer.interval = 10000;
@@ -48,26 +68,41 @@ var api = {
         this.m_reconnectTimer.triggered.connect( function() { self.open() } );
     },
 
+    write: function(msg)
+    {
+        this.m_chatSocket.sendTextMessage(msg);
+    },
+
     open: function()
     {
-        this.m_chatSocket.disconnect();
-        this.m_chatSocket.connect();
+        this.m_chatSocket.active = false;
+        this.m_chatSocket.active = true;
         console.log("IRC: Connecting...");
     },
 
     close: function()
     {
         console.log("IRC: Disconnecting.");
-        this.m_chatSocket.disconnect();
+        this.m_chatSocket.active = false;
     },
 
     socketConnected: function()
     {
         console.log("IRC: Connected.");
         this.m_reconnectTimer.stop();
-        this.m_chatSocket.write("USER "+this.m_credentials['username']+" "+this.m_credentials['username']+" "+this.m_credentials['username']+" "+this.m_credentials['username']+"\n");
-        this.m_chatSocket.write("PASS "+this.m_credentials['authkey']+"\n");
-        this.m_chatSocket.write("NICK "+this.m_credentials['username']+"\n");
+        this.m_tryingToLogin = true;
+        this.write("USER "+Overlay.username+" "+Overlay.username+" "+Overlay.username+" "+Overlay.username+"\n");
+        this.write("PASS oauth:"+Overlay.authkey+"\n");
+        this.write("NICK "+Overlay.username+"\n");
+    },
+
+    authFailed: function()
+    {
+        Overlay.showMessage(qsTr("Couldn't authenticate! Try re-linking your Twitch account in Configuration."));
+        this.m_tryingToLogin = false;
+        this.close();
+        if( this.m_reconnectTimer )
+            this.m_reconnectTimer.stop();
     },
 
     socketRead: function(message)
@@ -84,18 +119,31 @@ var api = {
         {
             var line = lines[x];
             line = line.replace('\r', '');
+            if( line.length == 0 )
+                continue;
+
             console.log("IRC: "+line);
 
             var parts = line.split(' ');
             if( parts[0] == 'PING' )
             {
                 console.log("PING received ("+line+"), sending PONG...");
-                this.m_chatSocket.write("PONG "+parts[1]+"\n");
+                this.write("PONG "+parts[1]+"\n");
+            }
+            else if( parts[1] == 'NOTICE' && parts[3] == ':Login' && parts[4] == 'authentication' && parts[5] == 'failed')
+            {
+                console.log("Failed to authenticate. Token expired?");
+                this.authFailed();
             }
             else if( parts[1] == '376' )
             {
-                console.log("Joining channel: #"+this.m_credentials['channel']);
-                this.m_chatSocket.write("JOIN #"+this.m_credentials['channel']+"\n");
+                this.m_tryingToLogin = false;
+
+                console.log("Enabling Twitch tags....");
+                this.write("CAP REQ :twitch.tv/tags\n");
+
+                console.log("Joining channel: #"+Overlay.channel);
+                this.write("JOIN #"+Overlay.channel+"\n");
             }
             else if( parts[1] == '353' )
             {
@@ -108,6 +156,86 @@ var api = {
                 var username = nickparts[0].substr(1);
                 this.fetchAvatar( 0, username );
                 this.chatSingleMessage( username, text );
+            }
+            else if( parts[0].substr(0,1) == '@' && parts[2] == 'PRIVMSG' )
+            {
+                // Twitch-tagged message.
+                var tagpairs = parts[0].substr(1).split(';');
+
+                // Create a hash:
+                var tags = {};
+                for( var y=0; y < tagpairs.length; y++ )
+                {
+                    var tagset = tagpairs[y].split('=');
+                    var k = tagset[0];
+                    var v = tagset[1];
+                    if( k == 'emotes' && v.length > 0 )
+                    {
+                        var emotereps = [];
+
+                        // Further parse these out:
+                        var emotes = v.split('/');
+                        for( var z=0; z < emotes.length; z++ )
+                        {
+                            var eline = emotes[z];
+                            var idtoreps = eline.split(':');
+                            var reps = idtoreps[1].split(',');
+                            for( var a=0; a < reps.length; a++ )
+                            {
+                                var reppair = reps[a];
+                                var sf = reppair.split('-');
+                                emotereps.push( [ idtoreps[0], sf[0], sf[1] ] );
+                            }
+                        }
+                        emotereps.sort( function(a,b) { return parseInt(a[1]) - parseInt(b[1]); } );
+                        tags[k] = emotereps;
+                    }
+                    else
+                        tags[k] = v;
+                }
+
+                console.log("TAGS: "+JSON.stringify(tags,null,2));
+
+                var nickparts = parts[1].split('!');
+                var text = line.substr( parts[0].length + parts[1].length + parts[2].length + parts[3].length + 5 );
+                if( tags['emotes'] )
+                {
+                    // Parse emotes in:
+                    var newtext = '';
+                    var offset = 0;
+                    for( var z=0; z < tags['emotes'].length; z++ )
+                    {
+                        var emote = tags['emotes'][z];
+                        var id = emote[0];
+                        var s = parseInt(emote[1]);
+                        var e = parseInt(emote[2]);
+                        var piece = text.substr(offset,s-offset).replace(/</g, '&lt;');
+                        piece = piece.replace(/>/g, '&gt;');
+                        newtext += piece;
+                        newtext += '<img height=16 width=16 src="http://static-cdn.jtvnw.net/emoticons/v1/'+id+'/1.0" />';
+                        offset = e+1;
+                    }
+                    if( offset < text.length )
+                    {
+                        var piece = text.substr(offset).replace('<', '&lt;');
+                        piece = piece.replace('>', '&gt;');
+                        newtext += piece;
+                    }
+
+                    text = newtext;
+                }
+                else
+                {
+                    text = text.replace(/</g, '&lt;');
+                    text = text.replace(/>/g, '&gt;');
+                }
+
+                var username = nickparts[0].substr(1);
+                this.fetchAvatar( 0, username );
+                if( tags['display-name'] && tags['display-name'].length > 0 )
+                    this.chatSingleMessage( username, text, tags['display-name'] );
+                else
+                    this.chatSingleMessage( username, text, username );
             }
         }
     },
@@ -138,10 +266,6 @@ var api = {
             // Grab their avatar:
             var url = 'http://dawnnest.com/userinfo.php?login=' + username;
 
-            // TODO: Use the twitch auth oauth bearer heyitsmeandallgood auth thing with the server auth thing stuff to say "authed".. or something:
-            //var url = 'https://api.twitch.tv/helix/users?login=' + username;
-            //var headers = [ ['Client-ID', this.m_credentials['clientid']], ['Authorization', 'Bearer '+this.m_credentials['clientsecret']] ];
-
             this.httpRequester(url, function(pkt){
                 var json = JSON.parse(pkt);
                 var aurl = json['data'][0]['profile_image_url'];
@@ -161,20 +285,20 @@ var api = {
             callback( username, this.m_users[username] );
     },
 
-    chatSingleMessage: function(username, message)
+    chatSingleMessage: function(username, message, styledusername)
     {
         if( message.length == 0 ) return;
 
         message = message.replace('\r', '');
 
         var roles = [];
-        if( username == this.m_credentials['username'] )
+        if( username == Overlay.username )
             roles.push('Owner');
 
         var msg = {
             'username': username,
             'userid': username,
-            'styledusername': '<b>'+username+'</b>', // TODO: roles based on IRC rank?
+            'styledusername': '<b>'+styledusername+'</b>', // TODO: roles based on IRC rank?
             'roles': roles, // TODO: roles based on IRC rank?
             'timestamp': new Date(),
             'historic': false,
@@ -193,7 +317,7 @@ var api = {
 
     sendMessage: function(msg) {
         console.log("Sending message: "+msg);
-        this.m_chatSocket.write("PRIVMSG #"+this.m_credentials['channel']+" :"+msg+"\n");
+        this.write("PRIVMSG #"+Overlay.channel+" :"+msg+"\n");
     },
 
     httpRequester: function(url, callback, headers) {

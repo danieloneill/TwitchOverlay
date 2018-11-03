@@ -8,5 +8,6 @@
         <file>qml/configure.qml</file>
         <file>qml/Handle.qml</file>
         <file>qml/Repositioner.qml</file>
+        <file>qml/TwitchLogin.qml</file>
     </qresource>
 </RCC>

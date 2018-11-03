@@ -33,12 +33,6 @@ Rectangle {
 
     function resetSettings()
     {
-        chatter.api.m_credentials['username'] = Overlay.username;
-        chatter.api.m_credentials['channel'] = Overlay.channel;
-        chatter.api.m_credentials['authkey'] = Overlay.authkey;
-        chatter.api.m_credentials['clientid'] = Overlay.clientid;
-        chatter.api.m_credentials['clientsecret'] = Overlay.secret;
-
         chatter.x = Overlay.overlayx;
         chatter.y = Overlay.overlayy;
         chatter.width = Overlay.overlayw;
@@ -74,6 +68,7 @@ Rectangle {
     Connections {
         target: Overlay
         onReconnect: {
+            resetSettings();
             chatter.api.open();
         }
         onDisconnect: {
