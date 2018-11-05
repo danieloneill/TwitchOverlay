@@ -9,5 +9,8 @@
         <file>qml/Handle.qml</file>
         <file>qml/Repositioner.qml</file>
         <file>qml/TwitchLogin.qml</file>
+        <file>qml/StylePreview.qml</file>
+        <file>qml/TextSlider.qml</file>
+        <file>previewbg.png</file>
     </qresource>
 </RCC>

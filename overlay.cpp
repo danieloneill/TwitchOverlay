@@ -176,6 +176,41 @@ QString Overlay::channel()
     return m_settings->value("channel").toString();
 }
 
+QString Overlay::notifySound()
+{
+    return m_settings->value("notifySound", "").toString();
+}
+
+QString Overlay::bgImage()
+{
+    return m_settings->value("bgImage", "").toString();
+}
+
+qreal Overlay::opacity()
+{
+    return m_settings->value("opacity", 100).toReal();
+}
+
+qreal Overlay::scale()
+{
+    return m_settings->value("scale", 100).toReal();
+}
+
+int Overlay::fadeDelay()
+{
+    return m_settings->value("fadeDelay", 600).toLongLong();
+}
+
+bool Overlay::showTimestamps()
+{
+    return m_settings->value("showTimestamps", true).toBool();
+}
+
+bool Overlay::showAvatars()
+{
+    return m_settings->value("showAvatars", true).toBool();
+}
+
 // property setters:
 void Overlay::setOverlayX(qreal v)
 {
@@ -257,6 +292,70 @@ void Overlay::setChannel(const QString &v)
     m_settings->setValue("channel", v);
     emit channelChanged();
 }
+
+void Overlay::setNotifySound(const QString &v)
+{
+    if( v == notifySound() )
+        return;
+
+    m_settings->setValue("notifySound", v);
+    emit notifySoundChanged();
+}
+
+void Overlay::setBgImage(const QString &v)
+{
+    if( v == bgImage() )
+        return;
+
+    m_settings->setValue("bgImage", v);
+    emit bgImageChanged();
+}
+
+void Overlay::setOpacity(qreal v)
+{
+    if( v == opacity() )
+        return;
+
+    m_settings->setValue("opacity", v);
+    emit opacityChanged();
+}
+
+void Overlay::setScale(qreal v)
+{
+    if( v == scale() )
+        return;
+
+    m_settings->setValue("scale", v);
+    emit scaleChanged();
+}
+
+void Overlay::setFadeDelay(int v)
+{
+    if( v == fadeDelay() )
+        return;
+
+    m_settings->setValue("fadeDelay", v);
+    emit fadeDelayChanged();
+}
+
+void Overlay::setShowTimestamps(bool v)
+{
+    if( v == showTimestamps() )
+        return;
+
+    m_settings->setValue("showTimestamps", v);
+    emit showTimestampsChanged();
+}
+
+void Overlay::setShowAvatars(bool v)
+{
+    if( v == showAvatars() )
+        return;
+
+    m_settings->setValue("showAvatars", v);
+    emit showAvatarsChanged();
+}
+
 
 void Overlay::paintEvent(QPaintEvent *ev) {
     if( !m_positioning )

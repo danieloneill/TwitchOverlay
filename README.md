@@ -9,13 +9,11 @@ A Twitch chat overlay for streamers to follow their stream chat while gaming.
 
 This application is developed using [Qt](http://www.qt.io/) in C++, QML, and Javascript. The buildsystem is QBS.
 
-You'll need [qml-sockets](https://github.com/jemc/qml-sockets). This allows us to connect to the IRC service on Twitch.
-
-The most convenient way to build both qml-sockets and TwitchOverlay is in Qt Creator itself, which is free to download, as is the open source edition of Qt.
+The most convenient way to build TwitchOverlay is in [Qt Creator](https://www.qt.io/qt-features-libraries-apis-tools-and-ide/#ide) itself, which is free to download, as is the open source edition of Qt.
 
 ## Build instructions
 
-Once you have qml-sockets built and installed (paying mind to selecting the correct type of build between Debug and Release depending on which type of TwitchOverlay build you intend to make), open TwitchOverlay.qbs in Qt Creator and click Build.
+Assuming you have your Qt Creator build environment properly configured, open TwitchOverlay.qbs in Qt Creator and click Build.
 
 ## Configuring
 
@@ -37,11 +35,19 @@ Clicking the chat window while in Reposition mode will save the position.
 
 The Configuration menu option will open a configuration window to specify a few required parameters:
 
-![Configuration Window](https://i.imgur.com/szQXFp1.png)
+![Configuration Window](https://i.imgur.com/M876OVA.png)
 
-Click "Link Twitch" and follow the prompts.
+ - **Link Twitch** will link TwitchOverlay to your account. Simply click the button and follow the prompts.
+ - **Channel** is the Twitch chat you wish to monitor. This is typically simply the Twitch username of the streamer. *(Note: the capitalization matters. Even if their username appears in chat with different capitalization, this must be set to the actual username. This can be found in the browser Address Bar when on their channel.)*
+ - **Backdrop** is the path to an image file to use as the chat backdrop. If blank, the widget will be entirely translucent besides the text itself.
+ - **Notification Sound** is the path to an audio clip to play to signify chat activity. If blank, no sound will be played.
+ - **Opacity** will modify the overlay opacity.
+ - **Scale** scales the chat up or down between 1% and 400%
+ - **Fade delay** allows you to specify how long messages appear, in seconds, before they fade out.
+ - **Show timestamps** shows or hides timestamps in the chat message headers.
+ - **Show avatars** shows or hides avatars in chat message headers.
 
-Channel is the Twitch chat you wish to monitor.
+It may be worth noting that the Preview in the configuration section is displayed at 66% scale. Pay this in mind with respect to the **Scale** slider setting.
 
 ## Usage
 

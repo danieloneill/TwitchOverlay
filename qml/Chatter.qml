@@ -1,6 +1,7 @@
 import QtQuick 2.7
-import QtQuick.Controls 2.0
+import QtQuick.Controls 2.2
 import QtGraphicalEffects 1.0
+import QtMultimedia 5.8
 
 Item {
     id: chatter
@@ -10,12 +11,26 @@ Item {
     property alias model: chatModel
     property bool positioning: false
 
+    property string bgimage: ''
+    property bool timestampsEnabled: true
+    property bool avatarsEnabled: true
+    property int fadeoutdelay: 600
+    property real overlayscale: 1.0
+
     signal chat(variant message)
     function sendMessage(message, cb) { return api.sendMessage(message, cb); }
+
+    onWidthChanged: scrollDown();
+    onHeightChanged: scrollDown();
 
     function applySettings(obj)
     {
         sfontsize = obj['chatFontSize'];
+    }
+
+    function scrollDown()
+    {
+        chatView.positionViewAtBeginning();
     }
 
     function appendMessage(msg)
@@ -25,7 +40,8 @@ Item {
         while( chatModel.count > 20 )
             chatModel.remove(chatModel.count-1, 1);
 
-        chatView.positionViewAtBeginning();
+        //if( notifySound.source.length > 0 )
+            notifySound.play();
     }
 
     function updateAvatar(username, url)
@@ -43,11 +59,39 @@ Item {
         }
     }
 
+    Audio {
+        id: notifySound
+        audioRole: Audio.NotificationRole
+        source: Overlay.notifySound
+        autoLoad: true
+        autoPlay: false
+    }
+
+    Item {
+        width: parent.width
+        height: parent.height
+        clip: true
+        Image {
+            id: bgImage
+            // This image is at 66% scale, so also scale Chatter down.
+            visible: chatter.bgimage.length > 0
+            source: chatter.bgimage
+            fillMode: Image.PreserveAspectCrop
+            scale: overlayscale
+            transformOrigin: Item.TopLeft
+            x: 0
+            y: 0
+            Component.onCompleted: {
+                console.log("Image is "+width+"x"+height+" scaled to "+(width*overlayscale)+"x"+(height*overlayscale));
+            }
+        }
+    }
+
     ListView {
         id: chatView
         anchors.fill: parent
-        anchors.margins: 4
-        spacing: 4
+        anchors.margins: 4 * overlayscale
+        spacing: 4 * overlayscale
         verticalLayoutDirection: ListView.BottomToTop
 
         clip: true
@@ -80,39 +124,41 @@ Item {
             radius: 8
 */
             Column {
-                x: 4
-                y: 4
+                x: 4 * overlayscale
+                y: 4 * overlayscale
                 width: parent.width
                 spacing: 3
                 clip: true
                 Row {
                     width: parent.width
-                    spacing: 6
+                    spacing: 6 * overlayscale
                     Image {
                         id: avatar
-                        height: 40
-                        width: 40
+                        visible: chatter.avatarsEnabled
+                        height: 40 * overlayscale
+                        width: 40 * overlayscale
                         sourceSize.width: width
                         sourceSize.height: height
                         fillMode: Image.PreserveAspectCrop
                         source: avatarUrl
                     }
                     Column {
-                        width: parent.width - avatar.width - 6
-                        spacing: -3
+                        width: parent.width - avatar.width - (6 * overlayscale)
+                        spacing: -3 * overlayscale
                         ToonLabel {
                             width: parent.width
                             text: styledusername
                             color: 'white'
-                            font.pointSize: 12
+                            font.pointSize: 12 * overlayscale
                         }
                         ToonLabel {
                             width: parent.width
                             text: timestamp
                             color: 'white'
-                            font.pointSize: 8
+                            font.pointSize: 8 * overlayscale
                             shadow.radius: 5
                             //shadow.color: '#999900aa'
+                            visible: chatter.timestampsEnabled
                         }
                     }
                 }
@@ -120,14 +166,13 @@ Item {
                     text: message
                     width: parent.width
                     color: 'white'
-                    font.pointSize: 10
+                    font.pointSize: 10 * overlayscale
                     shadow.radius: 5
                 }
             }
         }
-        onModelChanged: {
-            chatView.positionViewAtBeginning();
-        }
+
+        onModelChanged: scrollDown();
     }
 /*
     Timer {
@@ -146,55 +191,55 @@ Item {
     ListModel {
         id: demoModel
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
-            avatarUrl: 'qrc:/lewl.png'
+            avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
@@ -213,7 +258,7 @@ Item {
             {
                 var idx = chatModel.count-1;
                 var msg = chatModel.get(idx);
-                if( msg['timestamp'].getTime() + 600000 < now.getTime() // 10 minutes
+                if( msg['timestamp'].getTime() + (chatter.fadeoutdelay * 1000) < now.getTime()
                  || chatModel.count > 20 )
                     chatModel.remove(idx, 1);
                 else

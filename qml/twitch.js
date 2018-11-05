@@ -55,6 +55,7 @@ var api = {
         var url = this.m_authurl + '?a=refresh&refresh=' + encodeURIComponent(Overlay.refreshtoken);
 
         this.httpRequester(url, function(pkt) {
+            // TODO: Handle errors:
             console.log("Refresh result: "+pkt);
             var json = JSON.parse(pkt);
 

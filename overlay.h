@@ -28,6 +28,15 @@ class Overlay : public QWidget
     Q_PROPERTY(QString expires READ expires WRITE setExpires NOTIFY expiresChanged)
     Q_PROPERTY(QString channel READ channel WRITE setChannel NOTIFY channelChanged)
 
+    // Added for 1.2 release:
+    Q_PROPERTY(QString notifySound READ notifySound WRITE setNotifySound NOTIFY notifySoundChanged)
+    Q_PROPERTY(QString bgImage READ bgImage WRITE setBgImage NOTIFY bgImageChanged)
+    Q_PROPERTY(qreal opacity READ opacity WRITE setOpacity NOTIFY opacityChanged)
+    Q_PROPERTY(qreal scale READ scale WRITE setScale NOTIFY scaleChanged)
+    Q_PROPERTY(int fadeDelay READ fadeDelay WRITE setFadeDelay NOTIFY fadeDelayChanged)
+    Q_PROPERTY(bool showTimestamps READ showTimestamps WRITE setShowTimestamps NOTIFY showTimestampsChanged)
+    Q_PROPERTY(bool showAvatars READ showAvatars WRITE setShowAvatars NOTIFY showAvatarsChanged)
+
 public:
     explicit Overlay(int screen=0);
     ~Overlay();
@@ -43,6 +52,14 @@ signals:
     void refreshtokenChanged();
     void expiresChanged();
     void channelChanged();
+
+    void notifySoundChanged();
+    void bgImageChanged();
+    void opacityChanged();
+    void scaleChanged();
+    void fadeDelayChanged();
+    void showTimestampsChanged();
+    void showAvatarsChanged();
 
     void reconnect();
     void disconnect();
@@ -72,6 +89,14 @@ public slots:
     QString expires();
     QString channel();
 
+    QString notifySound();
+    QString bgImage();
+    qreal opacity();
+    qreal scale();
+    int fadeDelay();
+    bool showTimestamps();
+    bool showAvatars();
+
     // property setters:
     void setOverlayX(qreal v);
     void setOverlayY(qreal v);
@@ -83,6 +108,14 @@ public slots:
     void setRefreshtoken(const QString &v);
     void setExpires(const QString &v);
     void setChannel(const QString &v);
+
+    void setNotifySound(const QString &v);
+    void setBgImage(const QString &v);
+    void setOpacity(qreal v);
+    void setScale(qreal v);
+    void setFadeDelay(int v);
+    void setShowTimestamps(bool v);
+    void setShowAvatars(bool v);
 
 protected:
     virtual void paintEvent(QPaintEvent *ev);

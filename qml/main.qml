@@ -24,6 +24,10 @@ Rectangle {
             // This will (re)connect for us:
             main.resetSettings();
         }
+        onPositioningChanged: {
+            if( positioning )
+                opacity = 1;
+        }
     }
 
     function resetSettings()
@@ -32,6 +36,13 @@ Rectangle {
         chatter.y = Overlay.overlayy;
         chatter.width = Overlay.overlayw;
         chatter.height = Overlay.overlayh;
+
+        chatter.bgimage = Overlay.bgImage;
+        chatter.opacity = Overlay.opacity * 0.01;
+        chatter.overlayscale = Overlay.scale * 0.01;
+        chatter.fadeoutdelay = Overlay.fadeDelay;
+        chatter.timestampsEnabled = Overlay.showTimestamps;
+        chatter.avatarsEnabled = Overlay.showAvatars;
 
         if( Overlay.username.length > 0 )
             chatter.api.open();
@@ -46,6 +57,7 @@ Rectangle {
             chatter.positioning = false;
             Overlay.donePositioning();
             console.log("Done repositioning.");
+            chatter.opacity = Overlay.opacity * 0.01;
         }
         onRepositioned: {
             Overlay.overlayx = overlayX;
