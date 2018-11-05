@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>TwitchOverlay</DisplayName>
+    <Description>Install this.</Description>
+    <Version>1.2</Version>
+    <ReleaseDate>2018-11-05</ReleaseDate>
+    <Licenses>
+        <License name="GNU GENERAL PUBLIC LICENSE Version 3" file="license.txt" />
+    </Licenses>
+    <Default>true</Default>
+    <Script>installer.qs</Script>
+</Package>

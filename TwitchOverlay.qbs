@@ -48,31 +48,20 @@ Project {
             fileTagsFilter: "application"
             qbs.install: true
         }
-/*
-        // X11/xcb:
-        Group {
-            name: 'XOrg (BSD/Linux)'
-            condition: (!qbs.targetOS.contains("windows"))
-            files: ['QHotkey/qhotkey_x11.cpp'];
-        }
-
-        Depends {
-            name: "Qt.x11extras"
-            condition: (!qbs.targetOS.contains("windows"))
-        }
-
-        Properties {
-            condition: (!qbs.targetOS.contains("windows"))
-            cpp.dynamicLibraries: ["X11", "xcb"]
-        }
 
         // Windows:
         Group {
             name: 'Windows'
             condition: (qbs.targetOS.contains("windows"))
-            files: ['QHotkey/qhotkey_win.cpp'];
+            files: [
+                "scripts/windeployscript.bat",
+                "scripts/twitchoverlayinstaller/config/config.xml",
+                "scripts/twitchoverlayinstaller/packages/org.reinsoft.twitchoverlay/meta/installer.qs",
+                "scripts/twitchoverlayinstaller/packages/org.reinsoft.twitchoverlay/meta/license.txt",
+                "scripts/twitchoverlayinstaller/packages/org.reinsoft.twitchoverlay/meta/package.xml",
+            ]
         }
-*/
+
         Properties {
             condition: (qbs.targetOS.contains("windows"))
             cpp.dynamicLibraries: ["user32"]

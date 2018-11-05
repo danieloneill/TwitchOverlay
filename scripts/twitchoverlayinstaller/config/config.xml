@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>TwitchOverlay</Name>
+    <Version>1.2</Version>
+    <Title>TwitchOverlay Installer</Title>
+    <Publisher>Reinsoft</Publisher>
+    <StartMenuDir>TwitchOverlay</StartMenuDir>
+    <TargetDir>@HomeDir@/TwitchOverlay</TargetDir>
+</Installer>
