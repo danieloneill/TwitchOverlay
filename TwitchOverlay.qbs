@@ -35,11 +35,11 @@ Project {
                 "overlay.cpp",
                 "overlay.h",
                 "qml.qrc",
+                "qml/skeleton.qml",
                 "systray.cpp",
                 "systray.h",
                 "configuredialogue.cpp",
                 "configuredialogue.h",
-
                 "qml/dragtest.qml",
             ]
         }

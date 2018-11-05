@@ -1,10 +1,6 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.0
-import QtQuick.Dialogs 1.2
-import QtQuick.Layouts 1.2
 import QtGraphicalEffects 1.0
-
-import Qt.labs.settings 1.0
 
 Item {
     id: chatter
@@ -28,6 +24,8 @@ Item {
         chatModel.insert(0, msg);
         while( chatModel.count > 20 )
             chatModel.remove(chatModel.count-1, 1);
+
+        chatView.positionViewAtBeginning();
     }
 
     function updateAvatar(username, url)
@@ -127,8 +125,23 @@ Item {
                 }
             }
         }
+        onModelChanged: {
+            chatView.positionViewAtBeginning();
+        }
     }
-
+/*
+    Timer {
+        property int idx: 1
+        interval: 2000
+        onTriggered: {
+            var msg = { 'username':'TestUser', 'avatarUrl':'qrc:/lewl.png', 'styledusername':'<b>Prince</b>', 'message':'This is message #'+idx+' in the testing phase.' };
+            idx++;
+            appendMessage(msg);
+        }
+        running: true
+        repeat: true
+    }
+*/
     ListModel { id: chatModel }
     ListModel {
         id: demoModel

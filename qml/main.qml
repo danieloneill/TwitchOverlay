@@ -1,4 +1,4 @@
-import QtQuick 2.11
+import QtQuick 2.7
 
 import 'twitch.js' as Twitch
 
@@ -6,12 +6,7 @@ Rectangle {
     id: main
     visible: true
     color: 'transparent'
-    onWidthChanged: printSize()
-    Component.onCompleted: printSize()
-
-    function printSize() {
-        console.log("Size: " + width + "x" + height);
-    }
+    Component.onCompleted: Twitch.api.refresh();
 
     Chatter {
         id: chatter

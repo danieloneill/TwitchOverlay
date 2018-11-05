@@ -1,4 +1,7 @@
 var api = {
+    m_clientid: 'c6ssxu5079nah0rrwqcdfpg1qy8bwq',
+    m_authurl: 'http://dawnnest.com/twitchoverlay.php',
+
     m_chatHooks: [],
     m_avatarHooks: [],
     m_users: [],
@@ -37,11 +40,31 @@ var api = {
 
         this.httpRequester(url, function(pkt) {
             var json = JSON.parse(pkt);
+
             Overlay.setUsername(json['login']);
             Overlay.setChannel(json['login']);
 
             Overlay.reload();
         }, headers);
+    },
+
+    refresh: function()
+    {
+        // We really shouldn't NEED to do this while we're connected, but it will ensure that we can reconnect next time before
+        // it expires.
+        var url = this.m_authurl + '?a=refresh&refresh=' + encodeURIComponent(Overlay.refreshtoken);
+
+        this.httpRequester(url, function(pkt) {
+            console.log("Refresh result: "+pkt);
+            var json = JSON.parse(pkt);
+
+            Overlay.authkey = json['access_token'];
+            Overlay.refreshtoken = json['refresh_token'];
+
+            var expSecs = parseInt(''+json['expires_in']) - 120; // This will make us refresh 2 mins before it expires.
+            var expiry = new Date(Date.now() + (1000 * expSecs));
+            Overlay.setExpires(expiry);
+        });
     },
 
     create: function(chatModel)
@@ -230,8 +253,19 @@ var api = {
                     text = text.replace(/>/g, '&gt;');
                 }
 
+                // Handle /me actions:
+                var checkAction = /^\u0001ACTION (.*)\u0001/;
+                var res = checkAction.exec(text);
+                if( res && res.length > 1 )
+                {
+                    text = "<i>"+res[1]+"</i>";
+                }
+
+                // Let's grab the avatar:
                 var username = nickparts[0].substr(1);
                 this.fetchAvatar( 0, username );
+
+                // Post the message:
                 if( tags['display-name'] && tags['display-name'].length > 0 )
                     this.chatSingleMessage( username, text, tags['display-name'] );
                 else
@@ -264,9 +298,11 @@ var api = {
         if( !this.m_users[username] )
         {
             // Grab their avatar:
-            var url = 'http://dawnnest.com/userinfo.php?login=' + username;
+            var headers = [ [ 'Client-ID', self.m_clientid ], [ 'Authorization', 'Bearer '+Overlay.authkey ] ];
+            var url = 'https://api.twitch.tv/helix/users?login=' + username;
 
             this.httpRequester(url, function(pkt){
+                console.log("Avatar response: "+pkt);
                 var json = JSON.parse(pkt);
                 var aurl = json['data'][0]['profile_image_url'];
                 self.addUser( username, aurl );
@@ -278,8 +314,7 @@ var api = {
                 {
                     self.m_avatarHooks[x]( username, aurl );
                 }
-//            }, headers);
-              });
+            }, headers);
         }
         else if( callback )
             callback( username, this.m_users[username] );
