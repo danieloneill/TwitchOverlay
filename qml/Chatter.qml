@@ -1,7 +1,8 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.2
-import QtGraphicalEffects 1.0
-import QtMultimedia 5.8
+//import QtGraphicalEffects 1.0   // <-- For Qt5.x
+import Qt5Compat.GraphicalEffects // <-- For Qt6.x
+import QtMultimedia        // Qt 6.x
 
 Item {
     id: chatter
@@ -40,8 +41,7 @@ Item {
         while( chatModel.count > 20 )
             chatModel.remove(chatModel.count-1, 1);
 
-        //if( notifySound.source.length > 0 )
-            notifySound.play();
+        //notifySound.play();
     }
 
     function updateAvatar(username, url)
@@ -51,20 +51,13 @@ Item {
         {
             var ent = chatModel.get(x);
             if( ent['username'] == username )
-            {
-                //ent['avatarUrl'] = url;
                 chatModel.setProperty(x, 'avatarUrl', url);
-                console.log("Avatar URL updated to: "+url);
-            }
         }
     }
 
-    Audio {
+    MediaPlayer { // Qt 6.x
         id: notifySound
-        audioRole: Audio.NotificationRole
         source: Overlay.notifySound
-        autoLoad: true
-        autoPlay: false
     }
 
     Item {
@@ -81,9 +74,6 @@ Item {
             transformOrigin: Item.TopLeft
             x: 0
             y: 0
-            Component.onCompleted: {
-                console.log("Image is "+width+"x"+height+" scaled to "+(width*overlayscale)+"x"+(height*overlayscale));
-            }
         }
     }
 
@@ -254,15 +244,13 @@ Item {
         running: true
         onTriggered: {
             var now = new Date();
-            while( chatModel.count > 0 )
+            for( var j=0; j < chatModel.count; j++ )
             {
                 var idx = chatModel.count-1;
                 var msg = chatModel.get(idx);
                 if( msg['timestamp'].getTime() + (chatter.fadeoutdelay * 1000) < now.getTime()
                  || chatModel.count > 20 )
                     chatModel.remove(idx, 1);
-                else
-                    return;
             }
         }
     }

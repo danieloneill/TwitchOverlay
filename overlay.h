@@ -27,6 +27,8 @@ class Overlay : public QWidget
     Q_PROPERTY(QString refreshtoken READ refreshtoken WRITE setRefreshtoken NOTIFY refreshtokenChanged)
     Q_PROPERTY(QString expires READ expires WRITE setExpires NOTIFY expiresChanged)
     Q_PROPERTY(QString channel READ channel WRITE setChannel NOTIFY channelChanged)
+    Q_PROPERTY(QString clientid READ clientid WRITE setClientid NOTIFY clientidChanged)
+    Q_PROPERTY(QString clientsecret READ clientsecret WRITE setClientsecret NOTIFY clientsecretChanged)
 
     // Added for 1.2 release:
     Q_PROPERTY(QString notifySound READ notifySound WRITE setNotifySound NOTIFY notifySoundChanged)
@@ -52,6 +54,8 @@ signals:
     void refreshtokenChanged();
     void expiresChanged();
     void channelChanged();
+    void clientidChanged();
+    void clientsecretChanged();
 
     void notifySoundChanged();
     void bgImageChanged();
@@ -88,6 +92,8 @@ public slots:
     QString refreshtoken();
     QString expires();
     QString channel();
+    QString clientid();
+    QString clientsecret();
 
     QString notifySound();
     QString bgImage();
@@ -108,6 +114,8 @@ public slots:
     void setRefreshtoken(const QString &v);
     void setExpires(const QString &v);
     void setChannel(const QString &v);
+    void setClientid(const QString &v);
+    void setClientsecret(const QString &v);
 
     void setNotifySound(const QString &v);
     void setBgImage(const QString &v);

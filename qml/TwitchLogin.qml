@@ -1,6 +1,7 @@
 import QtQuick 2.7
 import QtQuick.Window 2.3
-import QtWebView 1.1
+//import QtWebView 1.1 // Qt 5.x
+import QtWebView       // Qt 6.x
 
 import 'twitch.js' as Twitch
 
@@ -13,31 +14,81 @@ Window {
     function spawn()
     {
         show();
-        webview.url = 'https://id.twitch.tv/oauth2/authorize?client_id='+Twitch.api.m_clientid+'&redirect_uri='+Twitch.api.m_authurl+'&response_type=code&scope=chat:read&force_verify=true';
+        webview.url = 'https://id.twitch.tv/oauth2/authorize?client_id='+Twitch.api.m_clientid+'&redirect_uri='+Twitch.api.m_authurl+'&response_type=code&scope=chat:read';
+    }
+
+    function loadUrl(url)
+    {
+        webview.url = url;
     }
 
     WebView {
         id: webview
         anchors.fill: parent
-        onLoadingChanged: {
+        onLoadingChanged: function (loadRequest) {
             console.log("Webview: "+loadRequest.status+" for URL: "+loadRequest.url);
             var url = ''+loadRequest.url;
-            if( loadRequest.status == 2 && url.substr(0,Twitch.api.m_authurl.length) == Twitch.api.m_authurl )
+            if( url.substr(0,Twitch.api.m_authurl.length) == Twitch.api.m_authurl )
             {
-                // Got it:
-                runJavaScript("document.body.innerHTML", function(result) {
-                    console.log("Contents: "+result);
-                    var json = JSON.parse( ""+result );
-                    Overlay.setAuthkey(json['access_token']);
+                // This is for a valid HTTP OAuth2 "reflector" (twitchoverlay.php running somewhere):
+                if( loadRequest.status == 2 )
+                {
+                    // Got it:
+                    runJavaScript("document.body.innerHTML", function(result) {
+                        console.log("Contents: "+result);
+                        var json = JSON.parse( ""+result );
+                        Overlay.setAuthkey(json['access_token']);
 
-                    var expSecs = parseInt(''+json['expires_in']) - 120; // This will make us refresh 2 mins before it expires.
-                    var expiry = new Date(Date.now() + (1000 * expSecs));
-                    Overlay.setExpires(expiry);
-                    Overlay.setRefreshtoken(json['refresh_token']);
+                        var expSecs = parseInt(''+json['expires_in']) - 120; // This will make us refresh 2 mins before it expires.
+                        var expiry = new Date(Date.now() + (1000 * expSecs));
+                        Overlay.setExpires(expiry);
+                        Overlay.setRefreshtoken(json['refresh_token']);
 
-                    Twitch.api.getUsername();
-                    syncWindow.hide();
-                });
+                        Twitch.api.getUsername();
+                        syncWindow.hide();
+                    });
+                }
+                else if( loadRequest.status == 3 )
+                {
+                    // Purely client-side, if above code fails (or, more appropriately, if https://twitchoverlay.invalid is the reflector URL):
+                    var client_id = Twitch.api.m_clientid;
+                    var client_secret = 'ac4ayn44612q3dj175q4g3b2t5uvrb';
+
+                    // We'll do it ourselves:
+                    var querystr = url.substr(Twitch.api.m_authurl.length + 1);
+                    var pairs = querystr.split('&');
+                    var codeset = {};
+                    for( var x=0; x < pairs.length; x++ )
+                    {
+                        var keypair = pairs[x].split('=');
+                        var k = decodeURIComponent( keypair[0] );
+                        var v = decodeURIComponent( keypair[1] );
+                        codeset[k] = v;
+                    }
+
+                    var nurl = 'https://id.twitch.tv/oauth2/token';
+                    var params = 'client_id='+encodeURIComponent(client_id)
+                                +'&client_secret='+encodeURIComponent(client_secret)
+                                +'&code='+encodeURIComponent(codeset['code'])
+                                +'&grant_type=authorization_code&redirect_uri='
+                                +encodeURIComponent(Twitch.api.m_authurl);
+
+                    console.log("Posting: "+nurl+" => "+params);
+                    Twitch.api.httpPostRequester(nurl, function(contents) {
+                        console.log("Got these contents in response: "+contents);
+
+                        var json = JSON.parse( ""+contents );
+                        Overlay.setAuthkey(json['access_token']);
+
+                        var expSecs = parseInt(''+json['expires_in']) - 120; // This will make us refresh 2 mins before it expires.
+                        var expiry = new Date(Date.now() + (1000 * expSecs));
+                        Overlay.setExpires(expiry);
+                        Overlay.setRefreshtoken(json['refresh_token']);
+
+                        Twitch.api.getUsername();
+                        syncWindow.hide();
+                    }, false, params);
+                }
             }
         }
     }

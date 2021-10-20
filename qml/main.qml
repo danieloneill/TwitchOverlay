@@ -6,7 +6,16 @@ Rectangle {
     id: main
     visible: true
     color: 'transparent'
-    Component.onCompleted: Twitch.api.refresh();
+    Component.onCompleted: {
+        chatter.api.hookChat(chatter.appendMessage);
+        chatter.api.hookAvatar(chatter.updateAvatar);
+
+        chatter.api.create(chatter);
+
+        // This will (re)connect for us:
+        main.resetSettings();
+        Twitch.api.refresh();
+    }
 
     Chatter {
         id: chatter
@@ -15,15 +24,6 @@ Rectangle {
         height: main.height * 0.6
         width: 240
 
-        Component.onCompleted: {
-            chatter.api.hookChat(chatter.appendMessage);
-            chatter.api.hookAvatar(chatter.updateAvatar);
-
-            chatter.api.create(chatter);
-
-            // This will (re)connect for us:
-            main.resetSettings();
-        }
         onPositioningChanged: {
             if( positioning )
                 opacity = 1;
@@ -74,14 +74,14 @@ Rectangle {
 
     Connections {
         target: Overlay
-        onReconnect: {
+        function onReconnect() {
             resetSettings();
             chatter.api.open();
         }
-        onDisconnect: {
+        function onDisconnect() {
             chatter.api.close();
         }
-        onRepositioning: {
+        function onRepositioning() {
             console.log("Starting to reposition...");
             repositioner.setRect(chatter.x, chatter.y, chatter.width, chatter.height);
             repositioner.visible = true;

@@ -1,7 +1,7 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.2
+import QtQuick.Dialogs        // <-- For Qt6.x
 
 Item {
     height: mainContainer.implicitHeight + 20
@@ -24,13 +24,21 @@ Item {
             Label { text: qsTr('Channel:'); }
             TextField { id: fieldChannel; text: Overlay.channel; Layout.fillWidth: true; Layout.columnSpan: 2 }
 
+            Label { text: qsTr('Client ID:'); }
+            TextField { id: fieldClientID; text: Overlay.clientid; Layout.fillWidth: true }
+            Text { color: 'blue'; text: '(?)'; MouseArea { anchors.fill: parent; onClicked: aboutOAuth2.show(); } }
+
+            Label { text: qsTr('Client Secret:'); }
+            TextField { id: fieldClientSecret; text: Overlay.clientsecret; Layout.fillWidth: true }
+            Text { color: 'blue'; text: '(?)'; MouseArea { anchors.fill: parent; onClicked: aboutOAuth2.show(); } }
+
             Label { text: qsTr('Backdrop:'); }
             TextField { id: bgimage; text: Overlay.bgImage; Layout.fillWidth: true }
             Button { text: qsTr('Select...'); onClicked: { bgDialogue.open(); } }
 
             Label { text: qsTr('Notification Sound:'); }
             TextField { id: notification; text: Overlay.notifySound; Layout.fillWidth: true }
-            Button { text: qsTr('Select...'); onClicked: { notifyDialogue.open(); } }
+            Button { text: qsTr('Select...'); onClicked: { notifyDialogue.open(); notifyDialogue.visible=true; } }
 
             Label { text: qsTr('Opacity:') }
             TextSlider {
@@ -92,45 +100,6 @@ Item {
             showavatars: cbAvatars.checked
         }
 
-        TwitchLogin {
-            id: twitchLogin
-        }
-
-
-        FileDialog {
-            id: bgDialogue
-            title: qsTr("Please choose an image file")
-            folder: shortcuts.home
-            selectExisting: true
-            selectFolder: false
-            selectMultiple: false
-            nameFilters: [ qsTr("Image files (*.jpg *.png)"), qsTr("All files (*)") ]
-            onAccepted: {
-                bgimage.text = bgDialogue.fileUrl;
-                bgDialogue.close();
-            }
-            onRejected: {
-                bgDialogue.close();
-            }
-        }
-
-        FileDialog {
-            id: notifyDialogue
-            title: qsTr("Please choose an audio file")
-            folder: shortcuts.home
-            selectExisting: true
-            selectFolder: false
-            selectMultiple: false
-            nameFilters: [ qsTr("Audio files (*.wav *.mp3)"), qsTr("All files (*)") ]
-            onAccepted: {
-                notification.text = notifyDialogue.fileUrl;
-                notifyDialogue.close();
-            }
-            onRejected: {
-                notifyDialogue.close();
-            }
-        }
-
         Row {
             Layout.fillWidth: true
             spacing: 5
@@ -150,6 +119,8 @@ Item {
                 onClicked: {
                     Overlay.disconnect();
                     Overlay.channel = fieldChannel.text;
+                    Overlay.clientid = fieldClientID.text;
+                    Overlay.clientsecret = fieldClientSecret.text;
                     Overlay.bgImage = bgimage.text;
                     Overlay.notifySound = notification.text;
                     Overlay.scale = scaleSlider.value;
@@ -163,5 +134,42 @@ Item {
                 }
             }
         }
+    }
+
+    TwitchLogin {
+        id: twitchLogin
+    }
+
+    FileDialog {
+        id: bgDialogue
+        title: qsTr("Please choose an image file")
+        fileMode: FileDialog.OpenFile
+        nameFilters: [ qsTr("Image files (*.jpg *.png)"), qsTr("All files (*)") ]
+        onAccepted: {
+            bgimage.text = bgDialogue.fileUrl;
+            bgDialogue.close();
+        }
+        onRejected: {
+            bgDialogue.close();
+        }
+    }
+
+    FileDialog {
+        id: notifyDialogue
+        title: qsTr("Please choose an audio file")
+        fileMode: FileDialog.OpenFile
+        nameFilters: [ qsTr("Audio files (*.wav *.mp3)"), qsTr("All files (*)") ]
+        onAccepted: {
+            notification.text = notifyDialogue.fileUrl;
+            notifyDialogue.close();
+        }
+        onRejected: {
+            notifyDialogue.close();
+        }
+    }
+
+    AboutOAuth2 {
+        id: aboutOAuth2
+        visible: false
     }
 }

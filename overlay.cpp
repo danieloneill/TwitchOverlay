@@ -34,6 +34,8 @@ Overlay::Overlay(int screen) : QWidget(0, Qt::FramelessWindowHint | Qt::WindowSt
     m_view->setResizeMode(QQuickWidget::SizeRootObjectToView);
     m_view->setSource(QUrl(QStringLiteral("qrc:/qml/main.qml")));
 
+    m_view->show();
+
     donePositioning();
 }
 
@@ -176,6 +178,16 @@ QString Overlay::channel()
     return m_settings->value("channel").toString();
 }
 
+QString Overlay::clientid()
+{
+    return m_settings->value("clientid").toString();
+}
+
+QString Overlay::clientsecret()
+{
+    return m_settings->value("clientsecret").toString();
+}
+
 QString Overlay::notifySound()
 {
     return m_settings->value("notifySound", "").toString();
@@ -291,6 +303,24 @@ void Overlay::setChannel(const QString &v)
 
     m_settings->setValue("channel", v);
     emit channelChanged();
+}
+
+void Overlay::setClientid(const QString &v)
+{
+    if( v == clientid() )
+        return;
+
+    m_settings->setValue("clientid", v);
+    emit clientidChanged();
+}
+
+void Overlay::setClientsecret(const QString &v)
+{
+    if( v == clientsecret() )
+        return;
+
+    m_settings->setValue("clientsecret", v);
+    emit clientsecretChanged();
 }
 
 void Overlay::setNotifySound(const QString &v)

@@ -1,6 +1,6 @@
 var api = {
     m_clientid: 'c6ssxu5079nah0rrwqcdfpg1qy8bwq',
-    m_authurl: 'http://dawnnest.com/twitchoverlay.php',
+    m_authurl: 'https://twitchoverlay.invalid/',
 
     m_chatHooks: [],
     m_avatarHooks: [],
@@ -132,12 +132,6 @@ var api = {
     socketRead: function(message)
     {
         var self = this;
-        /*
-        if( message == this.m_hack_lastLine )
-            return;
-
-        this.m_hack_lastLine = message;
-*/
         var lines = message.split("\n");
         for( var x=0; x < lines.length; x++ )
         {
@@ -278,8 +272,11 @@ var api = {
     socketDisconnected: function()
     {
         console.log("IRC: Disconnected.");
-        if( this.m_reconnectTimer )
+        try {
             this.m_reconnectTimer.start();
+        } catch(e) {
+            console.log("IRC: Reconnect timer stopped: "+e);
+        }
     },
 
     addUser: function( username, data )
@@ -347,8 +344,6 @@ var api = {
         {
             this.m_chatHooks[x]( msg );
         }
-
-        chatter.chat(msg);
     },
 
     sendMessage: function(msg) {
@@ -375,6 +370,29 @@ var api = {
             }
         }
         doc.send();
+    },
+
+    httpPostRequester: function(url, callback, headers, params) {
+        var doc = new XMLHttpRequest();
+        doc.onreadystatechange = function() {
+            if( doc.readyState == XMLHttpRequest.DONE )
+            {
+                var a = doc.responseText;
+                callback(a);
+            }
+        }
+
+        doc.open("POST", url, true);
+        doc.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        if( headers )
+        {
+            for( var x=0; x < headers.length; x++ )
+            {
+                var h = headers[x];
+                doc.setRequestHeader(h[0], h[1]);
+            }
+        }
+        doc.send(params);
     },
 
     sendBulkMessage: function(msg) {

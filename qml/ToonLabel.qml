@@ -1,5 +1,6 @@
 import QtQuick 2.7
-import QtGraphicalEffects 1.0
+//import QtGraphicalEffects 1.0   // <-- For Qt5.x
+import Qt5Compat.GraphicalEffects // <-- For Qt6.x
 
 Item {
     id: toonLabel
@@ -24,7 +25,6 @@ Item {
         radius: 4
         horizontalOffset: 0
         verticalOffset: 0
-        samples: 8
         spread: 0.7
         cached: true
     }

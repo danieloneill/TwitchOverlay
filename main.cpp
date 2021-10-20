@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QtWebEngineQuick/qtwebenginequickglobal.h>
 
 #include "overlay.h"
 #include "systray.h"
@@ -6,10 +7,15 @@
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QtWebEngineQuick::initialize();
 
     QApplication app(argc, argv);
     QCoreApplication::addLibraryPath("lib");
+
+    app.setQuitOnLastWindowClosed(false);
+
+    app.setApplicationName("TwitchOverlay");
+    app.setOrganizationName("TwitchOverlay");
 
     Overlay o(0);
     o.show();
