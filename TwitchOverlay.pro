@@ -2,20 +2,13 @@ QT += quick widgets quickwidgets webenginequick
 CONFIG += c++17
 
 SOURCES += main.cpp \
-        #networkaccessmanager.cpp \
-        #networkaccessmanagerfactory.cpp \
 	overlay.cpp \
 	systray.cpp \
 	configuredialogue.cpp
 
 HEADERS += overlay.h \
-        #networkaccessmanager.h \
-        #networkaccessmanagerfactory.h \
 	systray.h \
 	configuredialogue.h
-
-QMAKE_CXXFLAGS += -pg
-QMAKE_LFLAGS += -pg
 
 RESOURCES += qml.qrc
 
