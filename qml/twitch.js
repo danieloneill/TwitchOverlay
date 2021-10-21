@@ -48,10 +48,13 @@ var api = {
         }, headers);
     },
 
-    updateRefresh: function()
+    updateRefresh: function(timerParent)
     {
         if( this.m_refreshTimer )
             delete this.m_refreshTimer;
+
+        if( !timerParent )
+            timerParent = chatter;
 
         var expdobj = new Date(Overlay.expires);
         var nowdobj = new Date();
@@ -69,7 +72,8 @@ var api = {
             console.log("Updating refresh timer to launch in "+delay+"ms");
 
             var self = this;
-            this.m_refreshTimer = Qt.createQmlObject('import QtQuick 2.0; Timer { id: timer }', main, 'm_refreshTimer');
+            // Parent depends on where this is instantiated. It will be either chatter or syncWindow
+            this.m_refreshTimer = Qt.createQmlObject('import QtQuick 2.0; Timer { id: timer }', timerParent, 'm_refreshTimer');
             this.m_refreshTimer.interval = delay;
             this.m_refreshTimer.repeat = false;
             this.m_refreshTimer.triggered.connect( function() { self.refresh(); } );

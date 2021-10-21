@@ -45,7 +45,7 @@ Window {
                         Overlay.setRefreshtoken(json['refresh_token']);
 
                         // Reset the 'refresh' timer:
-                        Twitch.api.updateRefresh();
+                        Twitch.api.updateRefresh(syncWindow);
 
                         Twitch.api.getUsername();
                         syncWindow.hide();
@@ -85,7 +85,7 @@ Window {
                         Overlay.setRefreshtoken(json['refresh_token']);
 
                         // Reset the 'refresh' timer:
-                        Twitch.api.updateRefresh();
+                        Twitch.api.updateRefresh(syncWindow);
 
                         Twitch.api.getUsername();
                         syncWindow.hide();
