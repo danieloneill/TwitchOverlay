@@ -122,15 +122,35 @@ Item {
                 Row {
                     width: parent.width
                     spacing: 6 * overlayscale
-                    Image {
+                    Item {
                         id: avatar
                         visible: chatter.avatarsEnabled
                         height: 40 * overlayscale
                         width: 40 * overlayscale
-                        sourceSize.width: width
-                        sourceSize.height: height
-                        fillMode: Image.PreserveAspectCrop
-                        source: avatarUrl
+                        Image {
+                            id: sourceImage
+                            visible: false
+                            height: parent.height
+                            width: parent.width
+                            sourceSize.width: width
+                            sourceSize.height: height
+                            fillMode: Image.PreserveAspectCrop
+                            source: avatarUrl
+                        }
+                        Rectangle {
+                            id: mask
+                            visible: false
+                            height: parent.height
+                            width: parent.height
+                            color: 'black'
+                            radius: 10
+                        }
+                        OpacityMask {
+                            maskSource: mask
+                            source: sourceImage
+                            height: parent.height
+                            width: parent.height
+                        }
                     }
                     Column {
                         width: parent.width - avatar.width - (6 * overlayscale)

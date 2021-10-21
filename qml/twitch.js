@@ -1,5 +1,4 @@
 var api = {
-    m_clientid: 'c6ssxu5079nah0rrwqcdfpg1qy8bwq',
     m_authurl: 'https://twitchoverlay.invalid/',
 
     m_chatHooks: [],
@@ -12,6 +11,7 @@ var api = {
 
     m_chatSocket: false,
     m_reconnectTimer: false,
+    m_refreshTimer: false,
     m_chatModel: false,
 
     joinChat: function(chatModel)
@@ -48,15 +48,39 @@ var api = {
         }, headers);
     },
 
-    refresh: function()
+    updateRefresh: function()
     {
-        // We really shouldn't NEED to do this while we're connected, but it will ensure that we can reconnect next time before
-        // it expires.
-        var url = this.m_authurl + '?a=refresh&refresh=' + encodeURIComponent(Overlay.refreshtoken);
+        if( this.m_refreshTimer )
+            delete this.m_refreshTimer;
 
-        this.httpRequester(url, function(pkt) {
-            // TODO: Handle errors:
-            console.log("Refresh result: "+pkt);
+        var expdobj = new Date(Overlay.expires);
+        var nowdobj = new Date();
+
+        var diff = expdobj - nowdobj;
+
+        if( diff < 0 )
+        {
+            // We're going to have to reauthorise....
+        }
+        else
+        {
+            var timebuffer = 5 * 60 * 1000; // Refresh 5 mins (300000ms) before the token expires.
+            var delay = diff - timebuffer;
+            console.log("Updating refresh timer to launch in "+delay+"ms");
+
+            var self = this;
+            this.m_refreshTimer = Qt.createQmlObject('import QtQuick 2.0; Timer { id: timer }', main, 'm_refreshTimer');
+            this.m_refreshTimer.interval = delay;
+            this.m_refreshTimer.repeat = false;
+            this.m_refreshTimer.triggered.connect( function() { self.refresh(); } );
+        }
+    },
+
+    handleRefresh: function(pkt)
+    {
+        // TODO: Handle errors:
+        console.log("Refresh result: "+pkt);
+        try {
             var json = JSON.parse(pkt);
 
             Overlay.authkey = json['access_token'];
@@ -65,7 +89,42 @@ var api = {
             var expSecs = parseInt(''+json['expires_in']) - 120; // This will make us refresh 2 mins before it expires.
             var expiry = new Date(Date.now() + (1000 * expSecs));
             Overlay.setExpires(expiry);
-        });
+        } catch(e) {
+            console.log("Updating 'refresh' token failed: "+e);
+        }
+
+        // Reset the 'refresh' timer:
+        this.updateRefresh();
+    },
+
+    refresh: function()
+    {
+        // We really shouldn't NEED to do this while we're connected, but it will ensure that we can reconnect next time before
+        // it expires.
+
+        if( 'https://twitchoverlay.invalid/' == this.m_authurl )
+        {
+            // Self-hosted:
+            var url = 'https://id.twitch.tv/oauth2/token';
+            var params = 'client_id='+Overlay.clientid+'&client_secret='+Overlay.clientsecret+'&refresh_token='+Overlay.refreshtoken+'&grant_type=refresh_token';
+
+            var self = this;
+            console.log("Requesting: "+url);
+            this.httpPostRequester(url, function(pkt) {
+                self.handleRefresh();
+            }, [], params);
+        }
+        else
+        {
+            // Remote hosted:
+            var url = this.m_authurl + '?a=refresh&refresh=' + encodeURIComponent(Overlay.refreshtoken);
+
+            var self = this;
+            console.log("Requesting: "+url);
+            this.httpRequester(url, function(pkt) {
+                self.handleRefresh();
+            });
+        }
     },
 
     create: function(chatModel)
@@ -296,7 +355,7 @@ var api = {
         if( !this.m_users[username] )
         {
             // Grab their avatar:
-            var headers = [ [ 'Client-ID', self.m_clientid ], [ 'Authorization', 'Bearer '+Overlay.authkey ] ];
+            var headers = [ [ 'Client-ID', Overlay.clientid ], [ 'Authorization', 'Bearer '+Overlay.authkey ] ];
             var url = 'https://api.twitch.tv/helix/users?login=' + username;
 
             this.httpRequester(url, function(pkt){
@@ -377,6 +436,7 @@ var api = {
         doc.onreadystatechange = function() {
             if( doc.readyState == XMLHttpRequest.DONE )
             {
+                console.log("Response status: "+doc.status);
                 var a = doc.responseText;
                 callback(a);
             }

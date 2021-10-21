@@ -14,7 +14,7 @@ Window {
     function spawn()
     {
         show();
-        webview.url = 'https://id.twitch.tv/oauth2/authorize?client_id='+Twitch.api.m_clientid+'&redirect_uri='+Twitch.api.m_authurl+'&response_type=code&scope=chat:read';
+        webview.url = 'https://id.twitch.tv/oauth2/authorize?client_id='+Overlay.clientid+'&redirect_uri='+Twitch.api.m_authurl+'&response_type=code&scope=chat:read';
     }
 
     function loadUrl(url)
@@ -44,16 +44,15 @@ Window {
                         Overlay.setExpires(expiry);
                         Overlay.setRefreshtoken(json['refresh_token']);
 
+                        // Reset the 'refresh' timer:
+                        Twitch.api.updateRefresh();
+
                         Twitch.api.getUsername();
                         syncWindow.hide();
                     });
                 }
                 else if( loadRequest.status == 3 )
                 {
-                    // Purely client-side, if above code fails (or, more appropriately, if https://twitchoverlay.invalid is the reflector URL):
-                    var client_id = Twitch.api.m_clientid;
-                    var client_secret = 'ac4ayn44612q3dj175q4g3b2t5uvrb';
-
                     // We'll do it ourselves:
                     var querystr = url.substr(Twitch.api.m_authurl.length + 1);
                     var pairs = querystr.split('&');
@@ -67,8 +66,8 @@ Window {
                     }
 
                     var nurl = 'https://id.twitch.tv/oauth2/token';
-                    var params = 'client_id='+encodeURIComponent(client_id)
-                                +'&client_secret='+encodeURIComponent(client_secret)
+                    var params = 'client_id='+encodeURIComponent(Overlay.clientid)
+                                +'&client_secret='+encodeURIComponent(Overlay.clientsecret)
                                 +'&code='+encodeURIComponent(codeset['code'])
                                 +'&grant_type=authorization_code&redirect_uri='
                                 +encodeURIComponent(Twitch.api.m_authurl);
@@ -84,6 +83,9 @@ Window {
                         var expiry = new Date(Date.now() + (1000 * expSecs));
                         Overlay.setExpires(expiry);
                         Overlay.setRefreshtoken(json['refresh_token']);
+
+                        // Reset the 'refresh' timer:
+                        Twitch.api.updateRefresh();
 
                         Twitch.api.getUsername();
                         syncWindow.hide();
