@@ -87,5 +87,11 @@ Rectangle {
             repositioner.visible = true;
             chatter.positioning = true;
         }
+        function onLinked() {
+            // Reset the 'refresh' timer:
+            Twitch.api.updateRefresh(chatter);
+
+            Twitch.api.getUsername();
+        }
     }
 }

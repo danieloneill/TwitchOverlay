@@ -15,6 +15,7 @@ RESOURCES += qml.qrc
 DISTFILES += qml/skeleton.qml \
 	qml/AboutOAuth2.qml \
 	qml/Chatter.qml \
+	qml/FileDialogueWrapper.qml \
 	qml/Handle.qml \
 	qml/Repositioner.qml \
 	qml/StylePreview.qml \

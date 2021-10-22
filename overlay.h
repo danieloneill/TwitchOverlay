@@ -68,6 +68,7 @@ signals:
     void reconnect();
     void disconnect();
     void repositioning();
+    void linked();
     void _showMessage(const QString &message);
 
 public slots:

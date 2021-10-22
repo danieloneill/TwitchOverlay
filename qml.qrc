@@ -13,5 +13,6 @@
         <file>qml/TextSlider.qml</file>
         <file>previewbg.png</file>
         <file>qml/AboutOAuth2.qml</file>
+        <file>qml/FileDialogueWrapper.qml</file>
     </qresource>
 </RCC>

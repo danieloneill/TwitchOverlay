@@ -58,6 +58,8 @@ Item {
     MediaPlayer { // Qt 6.x
         id: notifySound
         source: Overlay.notifySound
+        audioOutput: AudioOutput {
+        }
     }
 
     Item {

@@ -140,13 +140,13 @@ Item {
         id: twitchLogin
     }
 
-    FileDialog {
+    FileDialogueWrapper {
         id: bgDialogue
         title: qsTr("Please choose an image file")
         fileMode: FileDialog.OpenFile
         nameFilters: [ qsTr("Image files (*.jpg *.png)"), qsTr("All files (*)") ]
         onAccepted: {
-            bgimage.text = bgDialogue.fileUrl;
+            bgimage.text = bgDialogue.selectedFile;
             bgDialogue.close();
         }
         onRejected: {
@@ -154,13 +154,13 @@ Item {
         }
     }
 
-    FileDialog {
+    FileDialogueWrapper {
         id: notifyDialogue
         title: qsTr("Please choose an audio file")
         fileMode: FileDialog.OpenFile
         nameFilters: [ qsTr("Audio files (*.wav *.mp3)"), qsTr("All files (*)") ]
         onAccepted: {
-            notification.text = notifyDialogue.fileUrl;
+            notification.text = notifyDialogue.selectedFile;
             notifyDialogue.close();
         }
         onRejected: {

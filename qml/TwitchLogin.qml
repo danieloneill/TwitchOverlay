@@ -44,10 +44,7 @@ Window {
                         Overlay.setExpires(expiry);
                         Overlay.setRefreshtoken(json['refresh_token']);
 
-                        // Reset the 'refresh' timer:
-                        Twitch.api.updateRefresh(syncWindow);
-
-                        Twitch.api.getUsername();
+                        Overlay.linked();
                         syncWindow.hide();
                     });
                 }
@@ -84,10 +81,7 @@ Window {
                         Overlay.setExpires(expiry);
                         Overlay.setRefreshtoken(json['refresh_token']);
 
-                        // Reset the 'refresh' timer:
-                        Twitch.api.updateRefresh(syncWindow);
-
-                        Twitch.api.getUsername();
+                        Overlay.linked();
                         syncWindow.hide();
                     }, false, params);
                 }
