@@ -22,7 +22,10 @@ Window {
     onRejected: close();
     onAccepted: close();
 
-    function open() { show(); }
+    // NOTE: This is a workaround for a jank Dialog implementation in Qt 6.x
+    // On Windows, an MFC dialog is produced below.
+    // On Linux, it's placed inside the parent, but like a .. transient modal.
+    function open() { if( Qt.platform.os == 'windows' ) { dialogue.open(); } else { show(); } }
 
     FileDialog {
         id: dialogue

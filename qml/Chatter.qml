@@ -41,7 +41,7 @@ Item {
         while( chatModel.count > 20 )
             chatModel.remove(chatModel.count-1, 1);
 
-        //notifySound.play();
+        notifySound.play();
     }
 
     function updateAvatar(username, url)
