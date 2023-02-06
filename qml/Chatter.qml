@@ -199,8 +199,6 @@ Item {
                 text: timestamp
                 color: 'white'
                 font.pointSize: 7 * overlayscale
-                //shadow.radius: 5
-                //shadow.color: '#999900aa'
                 visible: chatter.timestampsEnabled
             }
 

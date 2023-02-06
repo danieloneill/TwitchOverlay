@@ -181,6 +181,10 @@ let api = {
 
         message = message.replace('\r', '');
 
+        let flair = '';
+        if( packet['user']['scopes'] && packet['user']['scopes'].includes('MODERATOR') )
+            flair += `<img width="${chatter.overlayscale * 13}" height="${chatter.overlayscale * 13}" src="${this.m_owncastHost}/img/moderator-nobackground.svg" /> `;
+
         const colour = packet['user']['displayColor'];
         let ts = new Date(packet['timestamp']);
         let shortTime = `${ts.getHours()}:${(''+ts.getMinutes()).padStart(2, '0')}`;
@@ -188,7 +192,7 @@ let api = {
             'facility': 'owncast',
             'type': 'chat',
             'username': username,
-            'styledusername': `<span style="font-weight: 700; color: #${colour}">${username}</span>`, 
+            'styledusername': `${flair}<span style="font-weight: 700; color: #${colour}">${username}</span>`,
             'timestamp': shortTime,
             'message': message,
             'avatarUrl': ''
