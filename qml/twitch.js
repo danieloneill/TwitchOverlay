@@ -14,6 +14,11 @@ let api = {
     m_refreshTimer: false,
     m_chatModel: false,
 
+    valid: function()
+    {
+        return settings.channel.length > 0 && settings.clientid.length > 0 && settings.clientsecret.length > 0;
+    },
+
     joinChat: function(chatModel)
     {
         this.m_chatModel = this.create(chatModel);
@@ -34,9 +39,9 @@ let api = {
 
     getUsername: function()
     {
-        console.log("Updating username...");
-        var url = 'https://id.twitch.tv/oauth2/validate';
-        var headers = [ ['Authorization', 'OAuth '+settings.authkey ] ];
+        console.log("Twitch Updating username...");
+        const url = 'https://id.twitch.tv/oauth2/validate';
+        const headers = [ ['Authorization', 'OAuth '+settings.authkey ] ];
 
         this.httpRequester(url, function(pkt) {
             var json = JSON.parse(pkt);
@@ -53,10 +58,10 @@ let api = {
         if( this.m_refreshTimer )
             delete this.m_refreshTimer;
 
-        var expdobj = new Date(settings.expires);
-        var nowdobj = new Date();
+        const expdobj = new Date(settings.expires);
+        const nowdobj = new Date();
 
-        var diff = expdobj - nowdobj;
+        const diff = expdobj - nowdobj;
 
         if( diff < 0 )
         {
@@ -64,11 +69,11 @@ let api = {
         }
         else
         {
-            var timebuffer = 5 * 60 * 1000; // Refresh 5 mins (300000ms) before the token expires.
-            var delay = diff - timebuffer;
-            console.log("Updating refresh timer to launch in "+delay+"ms");
+            const timebuffer = 5 * 60 * 1000; // Refresh 5 mins (300000ms) before the token expires.
+            const delay = diff - timebuffer;
+            console.log("Twitch Updating refresh timer to launch in "+delay+"ms");
 
-            var self = this;
+            let self = this;
             // Parent depends on where this is instantiated. It will be either chatter or syncWindow
             this.m_refreshTimer = Qt.createQmlObject('import QtQuick 2.0; Timer { id: timer }', chatter, 'm_refreshTimer');
             this.m_refreshTimer.interval = delay;
@@ -91,7 +96,7 @@ let api = {
             var expiry = new Date(Date.now() + (1000 * expSecs));
             settings.expires = expiry;
         } catch(e) {
-            console.log("Updating 'refresh' token failed: "+e);
+            console.log("Twitch Updating 'refresh' token failed: "+e);
         }
 
         // Reset the 'refresh' timer:
@@ -102,10 +107,9 @@ let api = {
     {
         // We really shouldn't NEED to do this while we're connected, but it will ensure that we can reconnect next time before
         // it expires.
-
-        if( settings.channel.length === 0 || settings.clientid.length === 0 || settings.clientsecret.length === 0 )
+        if( !this.valid() )
         {
-            systray.showMessage(qsTr("Y'all credentializzles ain't no gud."), qsTr("Check that Channel matches your username, and that your Client ID and Client Secret are correct in the configuration options."));
+            systray.showMessage(qsTr("Twitch"), qsTr("Check that Channel matches your username, and that your Client ID and Client Secret are correct in the configuration options."));
             return;
         }
 
@@ -117,7 +121,7 @@ let api = {
             const url = 'https://id.twitch.tv/oauth2/token';
             const params = 'client_id='+settings.clientid+'&client_secret='+settings.clientsecret+'&refresh_token='+settings.refreshtoken+'&grant_type=refresh_token';
 
-            console.log("Requesting: "+url+" => "+params);
+            console.log("Twitch Requesting: "+url+" => "+params);
             this.httpPostRequester(url, function(pkt) {
                 self.handleRefresh();
             }, [], params);
@@ -127,7 +131,7 @@ let api = {
             // Remote hosted:
             const url = this.m_authurl + '?a=refresh&refresh=' + encodeURIComponent(settings.refreshtoken);
 
-            console.log("Requesting: "+url);
+            console.log("Twitch Requesting: "+url);
             this.httpRequester(url, function(pkt) {
                 self.handleRefresh();
             });
@@ -141,7 +145,7 @@ let api = {
 
         this.m_chatSocket = Qt.createQmlObject('import QtWebSockets 1.1; WebSocket { id: socket }', chatModel, 'm_chatSocket');
         this.m_chatSocket.statusChanged.connect( function(status) {
-            console.log("WebSocket status: "+status);
+            console.log("Twitch WebSocket status: "+status);
             if( status === 1 )
                 self.socketConnected();
             else if( status === 3 )
@@ -166,19 +170,21 @@ let api = {
     open: function()
     {
         this.m_chatSocket.active = false;
+        if( !this.valid() )
+            return;
         this.m_chatSocket.active = true;
-        console.log("IRC: Connecting...");
+        console.log("Twitch IRC: Connecting...");
     },
 
     close: function()
     {
-        console.log("IRC: Disconnecting.");
+        console.log("Twitch IRC: Disconnecting.");
         this.m_chatSocket.active = false;
     },
 
     socketConnected: function()
     {
-        console.log("IRC: Connected.");
+        console.log("Twitch IRC: Connected.");
         this.m_reconnectTimer.stop();
         this.m_tryingToLogin = true;
         this.write("USER "+settings.username+" "+settings.username+" "+settings.username+" "+settings.username+"\n");
@@ -188,7 +194,7 @@ let api = {
 
     authFailed: function()
     {
-        settings.showMessage(qsTr("Couldn't authenticate! Try re-linking your Twitch account in Configuration."));
+        systray.showMessage(qsTr("Twitch"), qsTr("Couldn't authenticate! Try re-linking your Twitch account in Configuration."));
         this.m_tryingToLogin = false;
         this.close();
         if( this.m_reconnectTimer )
@@ -201,7 +207,7 @@ let api = {
         const lines = message.split("\n");
         for( let x=0; x < lines.length; x++ )
         {
-            var line = lines[x];
+            let line = lines[x];
             line = line.replace('\r', '');
             if( line.length === 0 )
                 continue;
@@ -211,22 +217,22 @@ let api = {
             const parts = line.split(' ');
             if( parts[0] === 'PING' )
             {
-                console.log("PING received ("+line+"), sending PONG...");
+                console.log("Twitch PING received ("+line+"), sending PONG...");
                 this.write("PONG "+parts[1]+"\n");
             }
             else if( parts[1] === 'NOTICE' && parts[3] === ':Login' && parts[4] === 'authentication' && parts[5] === 'failed')
             {
-                console.log("Failed to authenticate. Token expired?");
+                console.log("Twitch Failed to authenticate. Token expired?");
                 this.authFailed();
             }
             else if( parts[1] === '376' )
             {
                 this.m_tryingToLogin = false;
 
-                console.log("Enabling Twitch tags....");
+                console.log("Twitch Enabling Twitch tags....");
                 this.write("CAP REQ :twitch.tv/tags\n");
 
-                console.log("Joining channel: #"+settings.channel);
+                console.log("Twitch Joining channel: #"+settings.channel);
                 this.write("JOIN #"+settings.channel+"\n");
             }
             else if( parts[1] == '353' )
@@ -235,42 +241,38 @@ let api = {
             }
             else if( parts[1] == 'PRIVMSG' )
             {
-                var nickparts = parts[0].split('!');
-                var text = line.substr( parts[0].length + parts[1].length + parts[2].length + 4 );
-                var username = nickparts[0].substr(1);
+                const nickparts = parts[0].split('!');
+                const text = line.substr( parts[0].length + parts[1].length + parts[2].length + 4 );
+                const username = nickparts[0].substr(1);
                 this.fetchAvatar( 0, username );
                 this.chatSingleMessage( username, text );
             }
             else if( parts[0].substr(0,1) == '@' && parts[2] == 'PRIVMSG' )
             {
                 // Twitch-tagged message.
-                var tagpairs = parts[0].substr(1).split(';');
+                const tagpairs = parts[0].substr(1).split(';');
 
                 // Create a hash:
-                var tags = {};
+                let tags = {};
                 for( var y=0; y < tagpairs.length; y++ )
                 {
-                    var tagset = tagpairs[y].split('=');
-                    var k = tagset[0];
-                    var v = tagset[1];
+                    const tagset = tagpairs[y].split('=');
+                    const k = tagset[0];
+                    const v = tagset[1];
                     if( k == 'emotes' && v.length > 0 )
                     {
-                        var emotereps = [];
+                        let emotereps = [];
 
                         // Further parse these out:
-                        var emotes = v.split('/');
-                        for( var z=0; z < emotes.length; z++ )
-                        {
-                            var eline = emotes[z];
-                            var idtoreps = eline.split(':');
-                            var reps = idtoreps[1].split(',');
-                            for( var a=0; a < reps.length; a++ )
-                            {
-                                var reppair = reps[a];
-                                var sf = reppair.split('-');
+                        const emotes = v.split('/');
+                        emotes.forEach( function(eline) {
+                            const idtoreps = eline.split(':');
+                            const reps = idtoreps[1].split(',');
+                            reps.forEach( function(reppair) {
+                                const sf = reppair.split('-');
                                 emotereps.push( [ idtoreps[0], sf[0], sf[1] ] );
-                            }
-                        }
+                            });
+                        });
                         emotereps.sort( function(a,b) { return parseInt(a[1]) - parseInt(b[1]); } );
                         tags[k] = emotereps;
                     }
@@ -278,10 +280,10 @@ let api = {
                         tags[k] = v;
                 }
 
-                console.log("TAGS: "+JSON.stringify(tags,null,2));
+                console.log("Twitch TAGS: "+JSON.stringify(tags,null,2));
 
-                var nickparts = parts[1].split('!');
-                var text = line.substr( parts[0].length + parts[1].length + parts[2].length + parts[3].length + 5 );
+                const nickparts = parts[1].split('!');
+                let text = line.substr( parts[0].length + parts[1].length + parts[2].length + parts[3].length + 5 );
                 if( tags['emotes'] )
                 {
                     // Parse emotes in:
@@ -301,7 +303,7 @@ let api = {
                     }
                     if( offset < text.length )
                     {
-                        var piece = text.substr(offset).replace('<', '&lt;');
+                        let piece = text.substr(offset).replace('<', '&lt;');
                         piece = piece.replace('>', '&gt;');
                         newtext += piece;
                     }
@@ -315,15 +317,15 @@ let api = {
                 }
 
                 // Handle /me actions:
-                var checkAction = /^\u0001ACTION (.*)\u0001/;
-                var res = checkAction.exec(text);
+                const checkAction = /^\u0001ACTION (.*)\u0001/;
+                const res = checkAction.exec(text);
                 if( res && res.length > 1 )
                 {
                     text = "<i>"+res[1]+"</i>";
                 }
 
                 // Let's grab the avatar:
-                var username = nickparts[0].substr(1);
+                const username = nickparts[0].substr(1);
                 this.fetchAvatar( 0, username );
 
                 // Post the message:
@@ -337,11 +339,11 @@ let api = {
 
     socketDisconnected: function()
     {
-        console.log("IRC: Disconnected.");
+        console.log("Twitch IRC: Disconnected.");
         try {
             this.m_reconnectTimer.start();
         } catch(e) {
-            console.log("IRC: Reconnect timer stopped: "+e);
+            console.log("Twitch IRC: Reconnect timer stopped: "+e);
         }
     },
 
@@ -392,6 +394,8 @@ let api = {
             roles.push('Owner');
 
         const msg = {
+            'facility': 'twitch',
+            'type': 'chat',
             'username': username,
             'userid': username,
             'styledusername': '<b>'+styledusername+'</b>', // TODO: roles based on IRC rank?

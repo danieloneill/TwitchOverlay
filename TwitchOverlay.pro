@@ -16,8 +16,6 @@ DISTFILES += qml/skeleton.qml \
 	qml/AboutOAuth2.qml \
 	qml/Chatter.qml \
         qml/Configure.qml \
-        qml/Configure5.qml \
-        qml/Configure6.qml \
         qml/DropShadow.qml \
         qml/DropShadow5.qml \
         qml/DropShadow6.qml \
@@ -37,4 +35,8 @@ DISTFILES += qml/skeleton.qml \
 	qml/ToonLabel.qml \
 	qml/TwitchLogin.qml \
         qml/overlay.qml \
-	qml/twitch.js
+        qml/twitch.js \
+        qml/owncast.js \
+        \
+        owncast.png \
+        twitch.png

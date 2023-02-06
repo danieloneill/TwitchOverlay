@@ -3,23 +3,32 @@ import QtQuick 2.15
 import Qt.labs.settings 1.1
 
 import 'twitch.js' as Twitch
+import 'owncast.js' as Owncast
 
 Rectangle {
     id: overlayRect
     visible: true
     color: 'transparent'
 
-    property variant api: Twitch.getApi();
+    property variant twitchApi: Twitch.getApi();
+    property variant owncastApi: Owncast.getApi();
 
     Component.onCompleted: {
-        chatter.api.hookChat(chatter.appendMessage);
-        chatter.api.hookAvatar(chatter.updateAvatar);
+        twitchApi.hookChat(chatter.appendMessage);
+        twitchApi.hookChat(chatter.saveLog);
+        twitchApi.hookAvatar(chatter.updateAvatar);
 
-        chatter.api.create(chatter);
+        twitchApi.create(chatter);
+
+        owncastApi.hookChat(chatter.appendMessage);
+        owncastApi.hookChat(chatter.saveLog);
+        owncastApi.create(chatter);
 
         // This will (re)connect for us:
         overlayRect.resetSettings();
-        overlayRect.api.refresh();
+        twitchApi.refresh();
+
+        chatter.restoreLog();
     }
 
     Settings {
@@ -29,6 +38,7 @@ Rectangle {
         property real overlayw
         property real overlayh
 
+        property bool twitchEnabled
         property string username
         property string authkey
         property string refreshtoken
@@ -37,6 +47,10 @@ Rectangle {
         property string clientid
         property string clientsecret
 
+        property bool owncastEnabled
+        property string owncastHost
+        property string owncastToken
+
         property string notifySound
         property string bgImage
         property real opacity
@@ -44,12 +58,14 @@ Rectangle {
         property int fadeDelay
         property bool showTimestamps
         property bool showAvatars
+
+        property string messages
     }
 
     SystemTray {
         id: systray
 
-        onConfigure: configure.open();
+        onConfigure: configure.show();
         onReposition: Overlay.reposition();
         onShowHide: Overlay.toggle();
     }
@@ -60,7 +76,6 @@ Rectangle {
 
     Chatter {
         id: chatter
-        api: overlayRect.api
 
         height: overlayRect.height * 0.6
         width: 240
@@ -85,8 +100,8 @@ Rectangle {
         chatter.timestampsEnabled = settings.showTimestamps || true;
         chatter.avatarsEnabled = settings.showAvatars || true;
 
-        if( settings.username.length > 0 )
-            chatter.api.open();
+        twitchApi.open();
+        owncastApi.open();
     }
 
     Repositioner {
@@ -125,12 +140,13 @@ Rectangle {
 
     function reconnect() {
         resetSettings();
-        chatter.api.open();
+        twitchApi.open();
+        owncastApi.open();
     }
 
     function linked() {
         // Reset the 'refresh' timer:
-        overlayRect.api.updateRefresh(chatter);
-        overlayRect.api.getUsername();
+        twitchApi.updateRefresh(chatter);
+        twitchApi.getUsername();
     }
 }

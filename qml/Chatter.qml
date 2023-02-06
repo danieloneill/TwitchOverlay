@@ -1,10 +1,10 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
 
 Item {
     id: chatter
 
-    property variant api
     property int sfontsize: 24
     property alias model: chatModel
     property bool positioning: false
@@ -16,7 +16,6 @@ Item {
     property real overlayscale: 1.0
 
     signal chat(variant message)
-    function sendMessage(message, cb) { return api.sendMessage(message, cb); }
 
     onWidthChanged: scrollDown();
     onHeightChanged: scrollDown();
@@ -47,8 +46,34 @@ Item {
         for( let x=0; x < cmlen; x++ )
         {
             const ent = chatModel.get(x);
-            if( ent['username'] == username )
+            if( ent['username'] === username )
                 chatModel.setProperty(x, 'avatarUrl', url);
+        }
+    }
+
+    function saveLog()
+    {
+        let messages = [];
+        const cmlen = chatModel.count;
+        for( let x=0; x < cmlen; x++ )
+        {
+            let ent = chatModel.get(x);
+            // TODO Update 'timestamp' before store to relative time.
+            messages.unshift(ent);
+        }
+        settings.messages = JSON.stringify(messages);
+    }
+
+    function restoreLog()
+    {
+        try {
+            const mlog = JSON.parse(settings.messages);
+            if( !(mlog instanceof Array) )
+                return;
+
+            mlog.forEach( m => appendMessage(m) );
+        } catch(err) {
+            console.log("Chatter: Couldn't restore old messages. Oh well.");
         }
     }
 
@@ -110,72 +135,105 @@ Item {
             border.color: '#88000000'
             radius: 8
 */
-            Column {
-                x: 4 * overlayscale
-                y: 4 * overlayscale
-                width: parent.width
-                spacing: 3
-                clip: true
-                Row {
-                    width: parent.width
-                    spacing: 6 * overlayscale
-                    Item {
-                        id: avatar
-                        visible: chatter.avatarsEnabled
-                        height: 40 * overlayscale
-                        width: 40 * overlayscale
-                        Image {
-                            id: sourceImage
-                            visible: false
-                            height: parent.height
-                            width: parent.width
-                            sourceSize.width: width
-                            sourceSize.height: height
-                            fillMode: Image.PreserveAspectCrop
-                            source: avatarUrl
-                        }
-                        Rectangle {
-                            id: mask
-                            visible: false
-                            height: parent.height
-                            width: parent.height
-                            color: 'black'
-                            radius: 10
-                        }
-                        OpacityMask {
-                            maskSource: mask
-                            source: sourceImage
-                            height: parent.height
-                            width: parent.height
-                        }
-                    }
-                    Column {
-                        width: parent.width - avatar.width - (6 * overlayscale)
-                        spacing: -3 * overlayscale
-                        ToonLabel {
-                            width: parent.width
-                            text: styledusername
-                            color: 'white'
-                            font.pointSize: 12 * overlayscale
-                        }
-                        ToonLabel {
-                            width: parent.width
-                            text: timestamp
-                            color: 'white'
-                            font.pointSize: 8 * overlayscale
-                            shadow.radius: 5
-                            //shadow.color: '#999900aa'
-                            visible: chatter.timestampsEnabled
-                        }
-                    }
+
+            Item {
+                id: avatar
+                anchors {
+                    top: parent.top
+                    left: parent.left
                 }
-                ToonLabel {
-                    text: message
+
+                visible: chatter.avatarsEnabled && avatarUrl && avatarUrl.length > 0
+                height: 40 * overlayscale
+                width: 40 * overlayscale
+                Image {
+                    id: sourceImage
+                    visible: false
+                    height: parent.height
                     width: parent.width
-                    color: 'white'
-                    font.pointSize: 10 * overlayscale
-                    shadow.radius: 5
+                    sourceSize.width: width
+                    sourceSize.height: height
+                    fillMode: Image.PreserveAspectCrop
+                    source: avatarUrl
                 }
+                Rectangle {
+                    id: mask
+                    visible: false
+                    height: parent.height
+                    width: parent.height
+                    color: 'black'
+                    radius: 10
+                }
+                OpacityMask {
+                    maskSource: mask
+                    source: sourceImage
+                    height: parent.height
+                    width: parent.height
+                }
+            }
+
+            Image {
+                id: facilityImage
+                anchors {
+                    top: parent.top
+                    left: avatar.visible ? avatar.right : parent.left
+                    leftMargin: 5 * overlayscale
+                    //topMargin: 5 * overlayscale
+                }
+
+                height: 16 * overlayscale
+                width: 16 * overlayscale
+                sourceSize.height: height
+                sourceSize.width: width
+                source: facility === 'twitch' ? 'qrc:/twitch.png' : 'qrc:/owncast.png'
+            }
+
+            ToonLabel {
+                anchors {
+                    top: parent.top
+                    left: facilityImage.right
+                    leftMargin: 5 * overlayscale
+                    //topMargin: 5 * overlayscale
+                }
+
+                text: timestamp
+                color: 'white'
+                font.pointSize: 7 * overlayscale
+                //shadow.radius: 5
+                //shadow.color: '#999900aa'
+                visible: chatter.timestampsEnabled
+            }
+
+            ToonLabel {
+                id: authorLabel
+                anchors {
+                    top: facilityImage.bottom
+                    left: avatar.visible ? avatar.right : parent.left
+                    leftMargin: 5 * overlayscale
+                    //topMargin: 5 * overlayscale
+                }
+
+                text: type === 'chat' ? styledusername : message
+                color: 'white'
+                font.pointSize: 10 * overlayscale
+            }
+
+            ToonLabel {
+                id: messageLabel
+                anchors {
+                    top: authorLabel.bottom
+                    topMargin: 3 * overlayscale
+                    left: parent.left
+                    leftMargin: 5 * overlayscale
+                    right: parent.right
+                    rightMargin: 5 * overlayscale
+                }
+
+                visible: type === 'chat'
+                text: message
+                color: 'white'
+                font.pointSize: 10 * overlayscale
+                //shadow.radius: 5
             }
         }
 
@@ -198,54 +256,72 @@ Item {
     ListModel {
         id: demoModel
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'
             message: 'This is some test text to simulate chat text that will be visible on your overlay.'
         }
         ListElement {
+            type: 'chat'
+            facility: 'twitch'
             avatarUrl: '../lewl.png'
             styledusername: '<b>Prince</b>'
             timestamp: '1999-12-31T23:59:59.999'

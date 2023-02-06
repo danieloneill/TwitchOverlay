@@ -11,45 +11,30 @@ Item {
     property alias horizontalAlignment: label.horizontalAlignment
     property bool centered: false
 
-    implicitHeight: labelContainer.implicitHeight
-    implicitWidth: labelContainer.implicitWidth
+    implicitHeight: label.implicitHeight
+    implicitWidth: label.implicitWidth
 
     DropShadow {
         id: dropshadow
-        anchors.fill: labelContainer
+        anchors.fill: label
         clip: parent.clip
-        source: labelContainer
+        source: label
         color: '#ff000000'
-        radius: 4
+        radius: 3
         horizontalOffset: 0
         verticalOffset: 0
-        spread: 0.7
+        spread: 0.4
         cached: true
     }
 
-    Item {
-        id: labelContainer
-        anchors.fill: parent
-        implicitWidth: label.implicitWidth + dropshadow.radius
-        implicitHeight: label.implicitHeight + dropshadow.radius
-        Text {
-            id: label
-            x: dropshadow.radius * 0.5
-            y: dropshadow.radius * 0.5
-            textFormat: Text.RichText
-            wrapMode: Text.Wrap
-            width: parent.width - (x*2)
-            height: parent.height - (y*2)
-            smooth: true
-        }
-
-        clip: parent.clip
-        visible: parent.visible
+    Text {
+        id: label
+        width: parent.width
+        //anchors.fill: parent
+        leftPadding: dropshadow.radius + dropshadow.spread * 2
+        topPadding: dropshadow.radius + dropshadow.spread
+        textFormat: Text.RichText
+        wrapMode: Text.Wrap
+        smooth: true
     }
-/*
-    onWidthChanged: {
-        console.log("Bottom label ("+text+") width: "+width);
-        labelContainer.width = toonLabel.width - dropshadow.radius;
-    }
-*/
 }
