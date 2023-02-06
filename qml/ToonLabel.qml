@@ -1,6 +1,4 @@
-import QtQuick 2.7
-//import QtGraphicalEffects 1.0   // <-- For Qt5.x
-import Qt5Compat.GraphicalEffects // <-- For Qt6.x
+import QtQuick 2.15
 
 Item {
     id: toonLabel

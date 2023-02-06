@@ -1,18 +1,31 @@
 <RCC>
     <qresource prefix="/">
-        <file>qml/main.qml</file>
+        <file>qml/overlay.qml</file>
         <file>qml/Chatter.qml</file>
         <file>qml/twitch.js</file>
         <file>qml/ToonLabel.qml</file>
         <file>lewl.png</file>
-        <file>qml/configure.qml</file>
+        <file>qml/Configure5.qml</file>
         <file>qml/Handle.qml</file>
         <file>qml/Repositioner.qml</file>
-        <file>qml/TwitchLogin.qml</file>
         <file>qml/StylePreview.qml</file>
         <file>qml/TextSlider.qml</file>
         <file>previewbg.png</file>
         <file>qml/AboutOAuth2.qml</file>
         <file>qml/FileDialogueWrapper.qml</file>
+        <file>qml/Login.qml</file>
+        <file>qml/SystemTray.qml</file>
+        <file>qml/Configure6.qml</file>
+        <file>qml/Configure.qml</file>
+        <file>qml/OpacityMask.qml</file>
+        <file>qml/OpacityMask5.qml</file>
+        <file>qml/OpacityMask6.qml</file>
+        <file>qml/MediaPlayer.qml</file>
+        <file>qml/MediaPlayer5.qml</file>
+        <file>qml/MediaPlayer6.qml</file>
+        <file>qml/DropShadow.qml</file>
+        <file>qml/DropShadow5.qml</file>
+        <file>qml/DropShadow6.qml</file>
+        <file>qml/MediaPlayerStub.qml</file>
     </qresource>
 </RCC>

@@ -1,8 +1,5 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.2
-//import QtGraphicalEffects 1.0   // <-- For Qt5.x
-import Qt5Compat.GraphicalEffects // <-- For Qt6.x
-import QtMultimedia        // Qt 6.x
+import QtQuick 2.15
+import QtQuick.Controls 2.15
 
 Item {
     id: chatter
@@ -46,20 +43,18 @@ Item {
 
     function updateAvatar(username, url)
     {
-        var cmlen = chatModel.count;
-        for( var x=0; x < cmlen; x++ )
+        const cmlen = chatModel.count;
+        for( let x=0; x < cmlen; x++ )
         {
-            var ent = chatModel.get(x);
+            const ent = chatModel.get(x);
             if( ent['username'] == username )
                 chatModel.setProperty(x, 'avatarUrl', url);
         }
     }
 
-    MediaPlayer { // Qt 6.x
+    MediaPlayer {
         id: notifySound
-        source: Overlay.notifySound
-        audioOutput: AudioOutput {
-        }
+        source: settings.notifySound
     }
 
     Item {

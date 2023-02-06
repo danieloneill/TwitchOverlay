@@ -1,11 +1,14 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.2
-import QtQuick.Layouts 1.3
-import QtQuick.Dialogs        // <-- For Qt6.x
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.15
+import QtQuick.Dialogs 1.3 as Dialogue
 
-Item {
+Dialogue.Dialog {
+    id: configDialogue
     height: mainContainer.implicitHeight + 20
     width: mainContainer.implicitWidth + 20
+
+    standardButtons: Dialogue.StandardButton.Save | Dialogue.StandardButton.Cancel
 
     ColumnLayout {
         id: mainContainer
@@ -22,22 +25,22 @@ Item {
             Button { id: fieldLink; text: 'Link Twitch'; Layout.fillWidth: true; Layout.columnSpan: 3; onClicked: { twitchLogin.spawn(); } }
 
             Label { text: qsTr('Channel:'); }
-            TextField { id: fieldChannel; text: Overlay.channel; Layout.fillWidth: true; Layout.columnSpan: 2 }
+            TextField { id: fieldChannel; text: settings.channel || ''; Layout.fillWidth: true; Layout.columnSpan: 2 }
 
             Label { text: qsTr('Client ID:'); }
-            TextField { id: fieldClientID; text: Overlay.clientid; Layout.fillWidth: true }
-            Text { color: 'blue'; text: '(?)'; MouseArea { anchors.fill: parent; onClicked: aboutOAuth2.show(); } }
+            TextField { id: fieldClientID; text: settings.clientid || ''; Layout.fillWidth: true }
+            Text { Layout.preferredWidth: implicitHeight; color: 'blue'; text: '(?)'; MouseArea { anchors.fill: parent; onClicked: aboutOAuth2.show(); } }
 
             Label { text: qsTr('Client Secret:'); }
-            TextField { id: fieldClientSecret; text: Overlay.clientsecret; Layout.fillWidth: true }
-            Text { color: 'blue'; text: '(?)'; MouseArea { anchors.fill: parent; onClicked: aboutOAuth2.show(); } }
+            TextField { id: fieldClientSecret; text: settings.clientsecret || ''; Layout.fillWidth: true }
+            Text { Layout.preferredWidth: implicitHeight; color: 'blue'; text: '(?)'; MouseArea { anchors.fill: parent; onClicked: aboutOAuth2.show(); } }
 
             Label { text: qsTr('Backdrop:'); }
-            TextField { id: bgimage; text: Overlay.bgImage; Layout.fillWidth: true }
+            TextField { id: bgimage; text: settings.bgImage || ''; Layout.fillWidth: true }
             Button { text: qsTr('Select...'); onClicked: { bgDialogue.open(); } }
 
             Label { text: qsTr('Notification Sound:'); }
-            TextField { id: notification; text: Overlay.notifySound; Layout.fillWidth: true }
+            TextField { id: notification; text: settings.notifySound || ''; Layout.fillWidth: true }
             Button { text: qsTr('Select...'); onClicked: { notifyDialogue.open(); notifyDialogue.visible=true; } }
 
             Label { text: qsTr('Opacity:') }
@@ -46,7 +49,7 @@ Item {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 from: 0
-                value: Overlay.opacity
+                value: settings.opacity || 100
                 to: 100
                 text: parseInt(value) + '%'
             }
@@ -57,7 +60,7 @@ Item {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 from: 1
-                value: Overlay.scale
+                value: settings.scale || 100
                 to: 400
                 text: parseInt(value) + '%'
             }
@@ -68,8 +71,8 @@ Item {
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
                 from: 1
-                value: Overlay.fadeDelay
-                to: 1200
+                value: settings.fadeDelay || 3600
+                to: 3600
                 text: parseInt(value) + 's'
                 textScale: 0.8
             }
@@ -79,13 +82,13 @@ Item {
                 text: qsTr('Show timestamps')
                 Layout.columnSpan: 2
                 Layout.fillWidth: true
-                checked: Overlay.showTimestamps
+                checked: settings.showTimestamps || true
             }
             CheckBox {
                 id: cbAvatars
                 text: qsTr('Show avatars')
                 Layout.fillWidth: true
-                checked: Overlay.showAvatars
+                checked: settings.showAvatars || true
             }
         }
 
@@ -99,51 +102,36 @@ Item {
             showtimestamps: cbTimestamps.checked
             showavatars: cbAvatars.checked
         }
-
-        Row {
-            Layout.fillWidth: true
-            spacing: 5
-            layoutDirection: Qt.RightToLeft
-
-            Button
-            {
-                text: qsTr('&Cancel')
-                onClicked: {
-                    Dialogue.hide();
-                }
-            }
-
-            Button
-            {
-                text: qsTr('&Okay')
-                onClicked: {
-                    Overlay.disconnect();
-                    Overlay.channel = fieldChannel.text;
-                    Overlay.clientid = fieldClientID.text;
-                    Overlay.clientsecret = fieldClientSecret.text;
-                    Overlay.bgImage = bgimage.text;
-                    Overlay.notifySound = notification.text;
-                    Overlay.scale = scaleSlider.value;
-                    Overlay.opacity = opacitySlider.value;
-                    Overlay.fadeDelay = fadeSlider.value;
-                    Overlay.showTimestamps = cbTimestamps.checked;
-                    Overlay.showAvatars = cbAvatars.checked;
-                    Overlay.reconnect();
-
-                    Dialogue.hide();
-                }
-            }
-        }
     }
 
-    TwitchLogin {
+    onRejected: configDialogue.close();
+    onAccepted: {
+        //Overlay.disconnect();
+        settings.channel = fieldChannel.text;
+        settings.clientid = fieldClientID.text;
+        settings.clientsecret = fieldClientSecret.text;
+        settings.bgImage = bgimage.text;
+        settings.notifySound = notification.text;
+        settings.scale = scaleSlider.value;
+        settings.opacity = opacitySlider.value;
+        settings.fadeDelay = fadeSlider.value;
+        settings.showTimestamps = cbTimestamps.checked;
+        settings.showAvatars = cbAvatars.checked;
+
+        if( settings.channel.length > 0 && settings.clientid.length > 0 && settings.clientsecret.length > 0 )
+            overlayRect.reconnect();
+
+        configDialogue.close();
+    }
+
+    Login {
         id: twitchLogin
     }
 
     FileDialogueWrapper {
         id: bgDialogue
         title: qsTr("Please choose an image file")
-        fileMode: FileDialog.OpenFile
+        //fileMode: FileDialog.OpenFile
         nameFilters: [ qsTr("Image files (*.jpg *.png)"), qsTr("All files (*)") ]
         onAccepted: {
             bgimage.text = bgDialogue.selectedFile;
@@ -157,7 +145,7 @@ Item {
     FileDialogueWrapper {
         id: notifyDialogue
         title: qsTr("Please choose an audio file")
-        fileMode: FileDialog.OpenFile
+        //fileMode: FileDialog.OpenFile
         nameFilters: [ qsTr("Audio files (*.wav *.mp3)"), qsTr("All files (*)") ]
         onAccepted: {
             notification.text = notifyDialogue.selectedFile;

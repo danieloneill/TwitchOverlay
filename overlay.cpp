@@ -1,7 +1,9 @@
+#include "authwindow.h"
 #include "overlay.h"
 
 #include <QApplication>
 #include <QDebug>
+#include <QMediaPlayer>
 #include <QPainter>
 #include <QPaintEvent>
 #include <QScreen>
@@ -13,12 +15,19 @@
  * https://github.com/trishume
  */
 
-Overlay::Overlay(int screen) : QWidget(0, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint ), m_screen(screen)
+Overlay::Overlay(int screen)
+    : QWidget(0, Qt::FramelessWindowHint | Qt::WindowStaysOnTopHint ),
+      m_screen{screen},
+      m_multimediaSupported{true}
 {
 #ifndef Q_OS_WINDOWS
     setWindowFlag(Qt::X11BypassWindowManagerHint);
 #endif
     setWindowFlag( Qt::ToolTip );
+
+#ifdef TEST_MULTIMEDIA
+    testForMultimedia();
+#endif
 
     //platformSpecificSetup(); // NOTE: For OSX (see https://github.com/trishume/transience/blob/master/osxhacks.mm)
 
@@ -26,13 +35,18 @@ Overlay::Overlay(int screen) : QWidget(0, Qt::FramelessWindowHint | Qt::WindowSt
     m_screenRect = srn->geometry();
     fillScreen();
 
-    m_settings = new QSettings("TwitchOverlay", "TwitchOverlay", this);
-
     m_view = new QQuickWidget(this);
     m_view->engine()->rootContext()->setContextProperty("Overlay", this);
+    m_view->engine()->rootContext()->setContextProperty("qVersion", QString::fromLocal8Bit(qVersion()));
+    connect( m_view->engine(), &QQmlEngine::quit, this, [this](){
+        m_view->deleteLater();
+        qApp->quit();
+    } );
+
+    qmlRegisterType<AuthWindow>("com.oneill.AuthWindow", 1, 0, "AuthWindow");
 
     m_view->setResizeMode(QQuickWidget::SizeRootObjectToView);
-    m_view->setSource(QUrl(QStringLiteral("qrc:/qml/main.qml")));
+    m_view->setSource(QUrl(QStringLiteral("qrc:/qml/overlay.qml")));
 
     m_view->show();
 
@@ -44,8 +58,6 @@ Overlay::~Overlay()
     repaint();
 
     m_view->deleteLater();
-
-    m_settings->deleteLater();
 }
 
 void Overlay::fillScreen() {
@@ -122,271 +134,6 @@ void Overlay::toggle()
     setVisible( !isVisible() );
 }
 
-void Overlay::reload()
-{
-    emit reconnect();
-}
-
-void Overlay::showMessage(const QString &message)
-{
-    emit _showMessage(message);
-}
-
-// property getters:
-qreal Overlay::overlayX()
-{
-    return m_settings->value("x", 60).toReal();
-}
-
-qreal Overlay::overlayY()
-{
-    return m_settings->value("y", 60).toReal();
-}
-
-qreal Overlay::overlayW()
-{
-    return m_settings->value("width", 240).toReal();
-}
-
-qreal Overlay::overlayH()
-{
-    return m_settings->value("height", 648).toReal();
-}
-
-QString Overlay::username()
-{
-    return m_settings->value("username").toString();
-}
-
-QString Overlay::authkey()
-{
-    return m_settings->value("authkey").toString();
-}
-
-QString Overlay::refreshtoken()
-{
-    return m_settings->value("refreshtoken").toString();
-}
-
-QString Overlay::expires()
-{
-    return m_settings->value("expires").toString();
-}
-
-QString Overlay::channel()
-{
-    return m_settings->value("channel").toString();
-}
-
-QString Overlay::clientid()
-{
-    return m_settings->value("clientid").toString();
-}
-
-QString Overlay::clientsecret()
-{
-    return m_settings->value("clientsecret").toString();
-}
-
-QString Overlay::notifySound()
-{
-    return m_settings->value("notifySound", "").toString();
-}
-
-QString Overlay::bgImage()
-{
-    return m_settings->value("bgImage", "").toString();
-}
-
-qreal Overlay::opacity()
-{
-    return m_settings->value("opacity", 100).toReal();
-}
-
-qreal Overlay::scale()
-{
-    return m_settings->value("scale", 100).toReal();
-}
-
-int Overlay::fadeDelay()
-{
-    return m_settings->value("fadeDelay", 600).toLongLong();
-}
-
-bool Overlay::showTimestamps()
-{
-    return m_settings->value("showTimestamps", true).toBool();
-}
-
-bool Overlay::showAvatars()
-{
-    return m_settings->value("showAvatars", true).toBool();
-}
-
-// property setters:
-void Overlay::setOverlayX(qreal v)
-{
-    if( v == overlayX() )
-        return;
-
-    m_settings->setValue("x", v);
-    emit overlayXChanged();
-}
-
-void Overlay::setOverlayY(qreal v)
-{
-    if( v == overlayY() )
-        return;
-
-    m_settings->setValue("y", v);
-    emit overlayYChanged();
-}
-
-void Overlay::setOverlayW(qreal v)
-{
-    if( v == overlayW() )
-        return;
-
-    m_settings->setValue("width", v);
-    emit overlayWChanged();
-}
-
-void Overlay::setOverlayH(qreal v)
-{
-    if( v == overlayH() )
-        return;
-
-    m_settings->setValue("height", v);
-    emit overlayHChanged();
-}
-
-void Overlay::setUsername(const QString &v)
-{
-    if( v == username() )
-        return;
-
-    m_settings->setValue("username", v);
-    emit usernameChanged();
-}
-
-void Overlay::setAuthkey(const QString &v)
-{
-    if( v == authkey() )
-        return;
-
-    m_settings->setValue("authkey", v);
-    emit authkeyChanged();
-}
-
-void Overlay::setRefreshtoken(const QString &v)
-{
-    if( v == refreshtoken() )
-        return;
-
-    m_settings->setValue("refreshtoken", v);
-    emit refreshtokenChanged();
-}
-
-void Overlay::setExpires(const QString &v)
-{
-    if( v == expires() )
-        return;
-
-    m_settings->setValue("expires", v);
-    emit expiresChanged();
-}
-
-void Overlay::setChannel(const QString &v)
-{
-    if( v == channel() )
-        return;
-
-    m_settings->setValue("channel", v);
-    emit channelChanged();
-}
-
-void Overlay::setClientid(const QString &v)
-{
-    if( v == clientid() )
-        return;
-
-    m_settings->setValue("clientid", v);
-    emit clientidChanged();
-}
-
-void Overlay::setClientsecret(const QString &v)
-{
-    if( v == clientsecret() )
-        return;
-
-    m_settings->setValue("clientsecret", v);
-    emit clientsecretChanged();
-}
-
-void Overlay::setNotifySound(const QString &v)
-{
-    if( v == notifySound() )
-        return;
-
-    m_settings->setValue("notifySound", v);
-    emit notifySoundChanged();
-}
-
-void Overlay::setBgImage(const QString &v)
-{
-    if( v == bgImage() )
-        return;
-
-    m_settings->setValue("bgImage", v);
-    emit bgImageChanged();
-}
-
-void Overlay::setOpacity(qreal v)
-{
-    if( v == opacity() )
-        return;
-
-    m_settings->setValue("opacity", v);
-    emit opacityChanged();
-}
-
-void Overlay::setScale(qreal v)
-{
-    if( v == scale() )
-        return;
-
-    m_settings->setValue("scale", v);
-    emit scaleChanged();
-}
-
-void Overlay::setFadeDelay(int v)
-{
-    if( v == fadeDelay() )
-        return;
-
-    m_settings->setValue("fadeDelay", v);
-    emit fadeDelayChanged();
-}
-
-void Overlay::setShowTimestamps(bool v)
-{
-    if( v == showTimestamps() )
-        return;
-
-    m_settings->setValue("showTimestamps", v);
-    emit showTimestampsChanged();
-}
-
-void Overlay::setShowAvatars(bool v)
-{
-    if( v == showAvatars() )
-        return;
-
-    m_settings->setValue("showAvatars", v);
-    emit showAvatarsChanged();
-}
-
-
 void Overlay::paintEvent(QPaintEvent *ev) {
     if( !m_positioning )
         return;
@@ -404,4 +151,38 @@ void Overlay::paintEvent(QPaintEvent *ev) {
 void Overlay::resizeEvent(QResizeEvent *ev)
 {
     m_view->resize( ev->size() );
+}
+
+#include <signal.h>
+#include <setjmp.h>
+Overlay *__o;
+
+jmp_buf env;
+
+void on_sigabrt(int signum)
+{
+  signal(signum, SIG_DFL);
+  __o->m_multimediaSupported = false;
+  longjmp(env, 1);
+}
+
+void try_and_catch_abort()
+{
+    __o->m_multimediaSupported = true;
+    if(setjmp(env) == 0) {
+      signal(SIGABRT, &on_sigabrt);
+      QMediaPlayer p;
+      signal(SIGABRT, SIG_DFL);
+    } else
+        __o->m_multimediaSupported = false;
+}
+
+void Overlay::testForMultimedia()
+{
+    printf("Testing for Multimedia...\n");
+    __o = this;
+
+    try_and_catch_abort();
+
+    printf("Multimedia: %s\n", m_multimediaSupported ? "true" : "false");
 }

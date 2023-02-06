@@ -1,4 +1,4 @@
-import QtQuick 2.7
+import QtQuick 2.15
 
 Item {
     function setRect(x, y, w, h)

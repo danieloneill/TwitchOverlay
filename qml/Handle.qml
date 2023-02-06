@@ -1,4 +1,4 @@
-import QtQuick 2.7
+import QtQuick 2.15
 
 Rectangle {
     id: handle
@@ -7,13 +7,13 @@ Rectangle {
 
     function setLimit( which, val )
     {
-        if( which == 'minX' )
+        if( which === 'minX' )
             dragger.drag.minimumX = val;
-        else if( which == 'minY' )
+        else if( which === 'minY' )
             dragger.drag.minimumY = val;
-        else if( which == 'maxX' )
+        else if( which === 'maxX' )
             dragger.drag.maximumX = val;
-        else if( which == 'maxY' )
+        else if( which === 'maxY' )
             dragger.drag.maximumY = val;
     }
 
@@ -29,7 +29,7 @@ Rectangle {
         drag.axis: Drag.XAndYAxis
         drag.minimumX: 0
         drag.minimumY: 0
-        drag.maximumX: main.width
-        drag.maximumY: main.height
+        drag.maximumX: overlayRect.width
+        drag.maximumY: overlayRect.height
     }
 }

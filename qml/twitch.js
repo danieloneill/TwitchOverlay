@@ -1,4 +1,4 @@
-var api = {
+let api = {
     m_authurl: 'https://twitchoverlay.invalid/',
 
     m_chatHooks: [],
@@ -21,13 +21,13 @@ var api = {
     },
 
     hookChat: function(callback) {
-        if( this.m_chatHooks.indexOf(callback) != -1 )
+        if( this.m_chatHooks.indexOf(callback) !== -1 )
             return;
         this.m_chatHooks.push(callback);
     },
 
     hookAvatar: function(callback) {
-        if( this.m_avatarHooks.indexOf(callback) != -1 )
+        if( this.m_avatarHooks.indexOf(callback) !== -1 )
             return;
         this.m_avatarHooks.push(callback);
     },
@@ -36,15 +36,15 @@ var api = {
     {
         console.log("Updating username...");
         var url = 'https://id.twitch.tv/oauth2/validate';
-        var headers = [ ['Authorization', 'OAuth '+Overlay.authkey ] ];
+        var headers = [ ['Authorization', 'OAuth '+settings.authkey ] ];
 
         this.httpRequester(url, function(pkt) {
             var json = JSON.parse(pkt);
 
-            Overlay.setUsername(json['login']);
-            Overlay.setChannel(json['login']);
+            settings.username = json['login'];
+            settings.channel = json['login'];
 
-            Overlay.reload();
+            overlayRect.reconnect();
         }, headers);
     },
 
@@ -53,7 +53,7 @@ var api = {
         if( this.m_refreshTimer )
             delete this.m_refreshTimer;
 
-        var expdobj = new Date(Overlay.expires);
+        var expdobj = new Date(settings.expires);
         var nowdobj = new Date();
 
         var diff = expdobj - nowdobj;
@@ -84,12 +84,12 @@ var api = {
         try {
             var json = JSON.parse(pkt);
 
-            Overlay.authkey = json['access_token'];
-            Overlay.refreshtoken = json['refresh_token'];
+            settings.authkey = json['access_token'];
+            settings.refreshtoken = json['refresh_token'];
 
             var expSecs = parseInt(''+json['expires_in']) - 120; // This will make us refresh 2 mins before it expires.
             var expiry = new Date(Date.now() + (1000 * expSecs));
-            Overlay.setExpires(expiry);
+            settings.expires = expiry;
         } catch(e) {
             console.log("Updating 'refresh' token failed: "+e);
         }
@@ -103,13 +103,20 @@ var api = {
         // We really shouldn't NEED to do this while we're connected, but it will ensure that we can reconnect next time before
         // it expires.
 
-        if( 'https://twitchoverlay.invalid/' == this.m_authurl )
+        if( settings.channel.length === 0 || settings.clientid.length === 0 || settings.clientsecret.length === 0 )
+        {
+            systray.showMessage(qsTr("Y'all credentializzles ain't no gud."), qsTr("Check that Channel matches your username, and that your Client ID and Client Secret are correct in the configuration options."));
+            return;
+        }
+
+
+        let self = this;
+        if( 'https://twitchoverlay.invalid/' === this.m_authurl )
         {
             // Self-hosted:
-            var url = 'https://id.twitch.tv/oauth2/token';
-            var params = 'client_id='+Overlay.clientid+'&client_secret='+Overlay.clientsecret+'&refresh_token='+Overlay.refreshtoken+'&grant_type=refresh_token';
+            const url = 'https://id.twitch.tv/oauth2/token';
+            const params = 'client_id='+settings.clientid+'&client_secret='+settings.clientsecret+'&refresh_token='+settings.refreshtoken+'&grant_type=refresh_token';
 
-            var self = this;
             console.log("Requesting: "+url+" => "+params);
             this.httpPostRequester(url, function(pkt) {
                 self.handleRefresh();
@@ -118,9 +125,8 @@ var api = {
         else
         {
             // Remote hosted:
-            var url = this.m_authurl + '?a=refresh&refresh=' + encodeURIComponent(Overlay.refreshtoken);
+            const url = this.m_authurl + '?a=refresh&refresh=' + encodeURIComponent(settings.refreshtoken);
 
-            var self = this;
             console.log("Requesting: "+url);
             this.httpRequester(url, function(pkt) {
                 self.handleRefresh();
@@ -130,15 +136,15 @@ var api = {
 
     create: function(chatModel)
     {
-        var self = this;
+        let self = this;
         this.m_chatModel = chatModel;
 
         this.m_chatSocket = Qt.createQmlObject('import QtWebSockets 1.1; WebSocket { id: socket }', chatModel, 'm_chatSocket');
         this.m_chatSocket.statusChanged.connect( function(status) {
             console.log("WebSocket status: "+status);
-            if( status == 1 )
+            if( status === 1 )
                 self.socketConnected();
-            else if( status == 3 )
+            else if( status === 3 )
                 self.socketDisconnected();
         });
         this.m_chatSocket.textMessageReceived.connect( function(msg) {
@@ -146,7 +152,7 @@ var api = {
         });
         this.m_chatSocket.url = 'ws://irc-ws.chat.twitch.tv:80';
 
-        this.m_reconnectTimer = Qt.createQmlObject('import QtQuick 2.0; Timer { id: timer }', chatModel, 'm_reconnectTimer');
+        this.m_reconnectTimer = Qt.createQmlObject('import QtQuick 2.15; Timer { id: timer }', chatModel, 'm_reconnectTimer');
         this.m_reconnectTimer.interval = 10000;
         this.m_reconnectTimer.repeat = false;
         this.m_reconnectTimer.triggered.connect( function() { self.open() } );
@@ -175,14 +181,14 @@ var api = {
         console.log("IRC: Connected.");
         this.m_reconnectTimer.stop();
         this.m_tryingToLogin = true;
-        this.write("USER "+Overlay.username+" "+Overlay.username+" "+Overlay.username+" "+Overlay.username+"\n");
-        this.write("PASS oauth:"+Overlay.authkey+"\n");
-        this.write("NICK "+Overlay.username+"\n");
+        this.write("USER "+settings.username+" "+settings.username+" "+settings.username+" "+settings.username+"\n");
+        this.write("PASS oauth:"+settings.authkey+"\n");
+        this.write("NICK "+settings.username+"\n");
     },
 
     authFailed: function()
     {
-        Overlay.showMessage(qsTr("Couldn't authenticate! Try re-linking your Twitch account in Configuration."));
+        settings.showMessage(qsTr("Couldn't authenticate! Try re-linking your Twitch account in Configuration."));
         this.m_tryingToLogin = false;
         this.close();
         if( this.m_reconnectTimer )
@@ -191,37 +197,37 @@ var api = {
 
     socketRead: function(message)
     {
-        var self = this;
-        var lines = message.split("\n");
-        for( var x=0; x < lines.length; x++ )
+        let self = this;
+        const lines = message.split("\n");
+        for( let x=0; x < lines.length; x++ )
         {
             var line = lines[x];
             line = line.replace('\r', '');
-            if( line.length == 0 )
+            if( line.length === 0 )
                 continue;
 
             console.log("IRC: "+line);
 
-            var parts = line.split(' ');
-            if( parts[0] == 'PING' )
+            const parts = line.split(' ');
+            if( parts[0] === 'PING' )
             {
                 console.log("PING received ("+line+"), sending PONG...");
                 this.write("PONG "+parts[1]+"\n");
             }
-            else if( parts[1] == 'NOTICE' && parts[3] == ':Login' && parts[4] == 'authentication' && parts[5] == 'failed')
+            else if( parts[1] === 'NOTICE' && parts[3] === ':Login' && parts[4] === 'authentication' && parts[5] === 'failed')
             {
                 console.log("Failed to authenticate. Token expired?");
                 this.authFailed();
             }
-            else if( parts[1] == '376' )
+            else if( parts[1] === '376' )
             {
                 this.m_tryingToLogin = false;
 
                 console.log("Enabling Twitch tags....");
                 this.write("CAP REQ :twitch.tv/tags\n");
 
-                console.log("Joining channel: #"+Overlay.channel);
-                this.write("JOIN #"+Overlay.channel+"\n");
+                console.log("Joining channel: #"+settings.channel);
+                this.write("JOIN #"+settings.channel+"\n");
             }
             else if( parts[1] == '353' )
             {
@@ -352,26 +358,23 @@ var api = {
 
     fetchAvatar: function( userid, username, callback )
     {
-        var self = this;
+        let self = this;
         if( !this.m_users[username] )
         {
             // Grab their avatar:
-            var headers = [ [ 'Client-ID', Overlay.clientid ], [ 'Authorization', 'Bearer '+Overlay.authkey ] ];
-            var url = 'https://api.twitch.tv/helix/users?login=' + username;
+            const headers = [ [ 'Client-ID', settings.clientid ], [ 'Authorization', 'Bearer '+settings.authkey ] ];
+            const url = 'https://api.twitch.tv/helix/users?login=' + username;
 
             this.httpRequester(url, function(pkt){
                 console.log("Avatar response: "+pkt);
-                var json = JSON.parse(pkt);
-                var aurl = json['data'][0]['profile_image_url'];
+                const json = JSON.parse(pkt);
+                const aurl = json['data'][0]['profile_image_url'];
                 self.addUser( username, aurl );
                 console.log("Avatar URL for '"+username+"' is '"+self.m_users[username]+"'");
                 if( callback )
                     callback( username, aurl );
 
-                for( var x=0; x < self.m_avatarHooks.length; x++ )
-                {
-                    self.m_avatarHooks[x]( username, aurl );
-                }
+                self.m_avatarHooks.forEach( h => h(username, aurl) );
             }, headers);
         }
         else if( callback )
@@ -380,15 +383,15 @@ var api = {
 
     chatSingleMessage: function(username, message, styledusername)
     {
-        if( message.length == 0 ) return;
+        if( message.length === 0 ) return;
 
         message = message.replace('\r', '');
 
-        var roles = [];
-        if( username == Overlay.username )
+        let roles = [];
+        if( username === settings.username )
             roles.push('Owner');
 
-        var msg = {
+        const msg = {
             'username': username,
             'userid': username,
             'styledusername': '<b>'+styledusername+'</b>', // TODO: roles based on IRC rank?
@@ -400,59 +403,44 @@ var api = {
         }
 
         console.log(JSON.stringify(msg,null,2));
-        for( var x=0; x < this.m_chatHooks.length; x++ )
-        {
-            this.m_chatHooks[x]( msg );
-        }
+        this.m_chatHooks.forEach( e => e(msg) );
     },
 
     sendMessage: function(msg) {
         console.log("Sending message: "+msg);
-        this.write("PRIVMSG #"+Overlay.channel+" :"+msg+"\n");
+        this.write("PRIVMSG #"+settings.channel+" :"+msg+"\n");
     },
 
     httpRequester: function(url, callback, headers) {
-        var doc = new XMLHttpRequest();
+        let doc = new XMLHttpRequest();
         doc.onreadystatechange = function() {
-            if (doc.readyState == XMLHttpRequest.DONE) {
-                var a = doc.responseText;
-                callback(a);
+            if (doc.readyState === XMLHttpRequest.DONE) {
+                callback(doc.responseText);
             }
         }
 
         doc.open("GET", url);
         if( headers )
-        {
-            for( var x=0; x < headers.length; x++ )
-            {
-                var h = headers[x];
-                doc.setRequestHeader(h[0], h[1]);
-            }
-        }
+            headers.forEach( h => doc.setRequestHeader(h[0], h[1]) );
+
         doc.send();
     },
 
     httpPostRequester: function(url, callback, headers, params) {
-        var doc = new XMLHttpRequest();
+        let doc = new XMLHttpRequest();
         doc.onreadystatechange = function() {
-            if( doc.readyState == XMLHttpRequest.DONE )
+            if( doc.readyState === XMLHttpRequest.DONE )
             {
                 console.log("Response status: "+doc.status);
-                var a = doc.responseText;
-                callback(a);
+                callback(doc.responseText);
             }
         }
 
         doc.open("POST", url, true);
         doc.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
         if( headers )
-        {
-            for( var x=0; x < headers.length; x++ )
-            {
-                var h = headers[x];
-                doc.setRequestHeader(h[0], h[1]);
-            }
-        }
+            headers.forEach( h => doc.setRequestHeader(h[0], h[1]) );
+
         doc.send(params);
     },
 
@@ -463,3 +451,5 @@ var api = {
     processBulkMessages: function() {
     }
 };
+
+function getApi() { return api; }
